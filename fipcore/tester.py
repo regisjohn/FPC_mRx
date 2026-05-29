@@ -1,83 +1,49 @@
-import os
-import ast
-
-# Folders you want to scan
-BASE = os.path.dirname(os.path.dirname(__file__))
-FOLDERS = [
-    os.path.join(BASE, "src/analysis"),
-    os.path.join(BASE, "src/plotting"),
-    os.path.join(BASE, "src/utils"),
-]
+import importlib.util
+import sys
+import time
 
 
-def extract_functions_section(docstring):
-    """Return list of (name, description) from the 'Functions:' section."""
-    if not docstring:
-        return []
-
-    lines = docstring.splitlines()
-    functions = []
-    in_section = False
-
-    for line in lines:
-        stripped = line.strip()
-
-        if stripped.lower().startswith("functions:"):
-            in_section = True
-            continue
-
-        if in_section:
-            if stripped.startswith("-"):
-                # Format: "- name: description"
-                item = stripped[1:].strip()
-                if ":" in item:
-                    name, desc = item.split(":", 1)
-                    functions.append((name.strip(), desc.strip()))
-            else:
-                # Stop when section ends
-                if stripped:
-                    continue
-                break
-
-    return functions
+# 1. DEFINE RECIPE TO LAZILY MAP ENTIRE PACKAGE TREE
+def lazy_register(fullname):
+    spec = importlib.util.find_spec(fullname)
+    if spec is None:
+        return None
+    spec.loader = importlib.util.LazyLoader(spec.loader)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[fullname] = module
+    return module
 
 
-def scan_folder(folder):
-    """Scan all .py files in a folder and extract function summaries."""
-    results = []
+# --- 2. LAZILY LOAD ROOT PACKAGES INSTANTLY ---
+t0 = time.perf_counter()
 
-    for fname in sorted(os.listdir(folder)):
-        if fname.endswith(".py"):
-            path = os.path.join(folder, fname)
+# Pre-register the module and its submodule paths as lazy proxies
+lazy_register("pyspedas")
 
-            with open(path, "r") as f:
-                try:
-                    module = ast.parse(f.read())
-                    docstring = ast.get_docstring(module)
-                except SyntaxError:
-                    continue
-
-            funcs = extract_functions_section(docstring)
-            if funcs:
-                results.append((fname, funcs))
-
-    return results
+t1 = time.perf_counter()
+print(f"Lazy Package Import Setup Time: {(t1 - t0) * 1000:.4f} ms")
 
 
-def main():
-    for folder in FOLDERS:
-        print(f"## {folder}")
-        entries = scan_folder(folder)
+# --- 3. YOUR NORMAL PROGRAM CONTINUES HERE ---
+print("\nNow running standard import syntax lines...")
 
-        if not entries:
-            print("(no documented functions)\n")
-            continue
+# This executes instantly because it's pointing to our pre-registered lazy proxy!
+from pyspedas.projects import mms
 
-        for fname, funcs in entries:
-            for name, desc in funcs:
-                print(f"- {name}: {desc}")
-        print()  # blank line between folders
+print("Triggering data load now (This forces actual disk load & execution)...")
+t2 = time.perf_counter()
 
+# Call it using your exact standard parameters
+# fgm_vars = mms.fgm(
+#     trange=["2015-10-16/13:05:30", "2015-10-16/13:07:30"],
+#     probe="1",
+#     data_rate="brst",
+#     level="l2",
+#     varnames="mms1_fgm_b_gse_brst_l2",
+#     time_clip=True,
+#     get_support_data=False,
+#     no_update=False,
+# )
 
-if __name__ == "__main__":
-    main()
+t3 = time.perf_counter()
+print(f"\nExecution & Data Loading Completed in: {t3 - t2:.4f} seconds")

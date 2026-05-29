@@ -22,7 +22,7 @@ Created: 2026-03-26
 
 import numpy as np
 from scipy.constants import c, physical_constants
-from pyspedas import get_data, store_data
+from pyspedas import get_data
 from fipcore.utils.helper_utils import is_interleaved
 
 
