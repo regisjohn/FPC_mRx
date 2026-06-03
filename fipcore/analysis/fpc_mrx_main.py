@@ -1,6 +1,6 @@
 """
 ================================================================================
-Runnable master function to perform MMS FPC Analysis.
+Master function to perform MMS FPC Analysis.
 
 Functions:
 - fpc_mrx_main: Master function to perform MMS FPC Analysis.
@@ -73,8 +73,8 @@ def fpc_mrx_main(trange, species='e', vth_lim=3.5, bin_width_frac=0.25, mean_phi
     
     # Read in FGM data
     fgm_vars = mms.fgm(trange=trange, probe=probe, data_rate=data_rate, level=level,
-        varnames='mms1_fgm_b_gse_brst_l2', time_clip=True, get_support_data=get_support_data, 
-        no_update=no_update)
+        varnames='mms1_fgm_b_gse_brst_l2', time_clip=True, 
+        get_support_data=get_support_data, no_update=no_update)
     
     # Renaming tplot variables
     tplot_rename('mms1_des_energy_brst', 'nrgy')

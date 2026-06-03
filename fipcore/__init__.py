@@ -10,6 +10,8 @@ __author__ = "Regis John"
 from .analysis.evec_proc import *
 from .analysis.fpc_proc import *
 from .analysis.fpc_mrx_main import *
+from .analysis.fpc_mrx_fold import *
+from .analysis.mms_jvec_main import *
 from .analysis.jvec_proc import *
 from .analysis.jdotE_proc import *
 from .analysis.vdf_proc import *

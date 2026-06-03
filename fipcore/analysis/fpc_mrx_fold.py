@@ -1,9 +1,9 @@
 """
 ================================================================================
-Runnable function to compute the folded FPC Analysis of MMS.
+Master function to compute the folded FPC Analysis of MMS.
 
 Functions:
-- fpc_mrx_fold: Function to compute the folded FPC and save to the same h5 file.
+- fpc_mrx_fold: Function to compute the folded FPC and save to h5 file.
 
 Author: Regis John
 Created: 2026-04-29
@@ -17,7 +17,23 @@ import os
 from fipcore.utils.io_utils import mms_name_make, h5sav
 from fipcore.utils.helper_utils import slice3d_to_2d
 
-def  fpc_mrx_fold(trange, species='e', bin_width_frac=0.25, coord_type="fac"):
+
+def fpc_mrx_fold(trange, species='e', bin_width_frac=0.25, coord_type="fac"):
+    """
+    Master function to compute folded FPC signature for a given time range
+    and species using the existing fpc data.
+
+    Parameters:
+    - trange (list of str): [start time, end time] in the format:
+        ['YYYY-MM-DD/hh:mm:ss','YYYY-MM-DD/hh:mm:ss']
+    - species (str): Species of particle to analyze. Default is 'e'. 
+    - bin_width_frac (float): Fraction of the thermal velocity used to 
+        determine the bin width. Default is 0.25.   
+    - coord_type (str): The type of coordinate system to use. Default is "fac".
+
+    Returns:
+    - hfile (str): Full path of the .h5 file containing the folded FPC data.
+    """
 
 
     # Data path setup
@@ -66,7 +82,8 @@ def  fpc_mrx_fold(trange, species='e', bin_width_frac=0.25, coord_type="fac"):
         cz_folds[0,:, idx:, t] = cz_2d_list[1][:, idx:] + cz_2d_list[1][:, :idx][:, ::-1]
         # Fold Cz(z,y) along +ve z-axis, flip the left and add to the right
         cz_folds[1, idx:, :, t] = cz_2d_list[2][idx:,:] + cz_2d_list[2][:idx, :][::-1, :]
-
+    
+    # --- Saving to a .h5 file ---
     dat_grps = {
         "fac": {
             "cx_folds": cx_folds,
@@ -74,8 +91,6 @@ def  fpc_mrx_fold(trange, species='e', bin_width_frac=0.25, coord_type="fac"):
             "cz_folds": cz_folds,
             }
         }
-    
-    # --- Saving to a .h5 file ---
     h5sav(hfile, dat_grps)
 
     print(f"Data saved to file: {hfile}")

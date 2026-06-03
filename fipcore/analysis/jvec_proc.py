@@ -1,9 +1,9 @@
 """
 ================================================================================
-Functions for computing J vector from FPC data and rotating into FAC & LMN.
+Functions for computing J vector from MMS data and rotating into FAC & LMN.
 
 Functions:
-- compute_jvec: Compute J vector from FPC data.
+- compute_jvec: Compute J vector from MMS data.
 - jvec_to_fac: Rotate J vector into FAC coordinates.
 - jvec_to_lmn: Rotate J vector into LMN coordinates.
 
@@ -11,6 +11,8 @@ Author: Regis John
 Date: 2026-03-31
 ================================================================================
 """
+
+import numpy as np
 from pyspedas.projects import mms
 from pyspedas import tplot_rename, get_data, store_data, set_coords, set_units
 from scipy.constants import elementary_charge as q_e
@@ -22,7 +24,7 @@ from fipcore.utils.coord_utils import rotate_to_fac, rotate_to_lmn
 
 def compute_jvec(trange, probe='1', data_rate='brst', level='l2', newname=None):
     """
-    Compute J vector from FPC data.
+    Compute J vector from MMS data.
 
     Parameters:
     - trange (list of str): start time, end time] in the format:
@@ -32,6 +34,9 @@ def compute_jvec(trange, probe='1', data_rate='brst', level='l2', newname=None):
     - level (str): Level of the data. Default is 'l2'.
     - newname (str): The name of the output tplot variable. If None, the default
          name is "jvec_gse"
+
+    Returns:
+    - out_name (str): The name of the output tplot variable.
 
     Returns:
     - out_name (str): The name of the output tplot variable.
