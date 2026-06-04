@@ -62,7 +62,6 @@ def imagecont_vdf_fpc(trange, species, bin_width_frac, time_index=0,
 
     with h5py.File(hfile, "r") as f:
         # Global Metadata
-        meta = f["meta"]
         time = f["meta"]["time"][:]
         species = f["meta"]["species"].asstr()[()]
         probe = f["meta"]["probe"].asstr()[()]
@@ -264,7 +263,6 @@ def imagecont_vdf_fpcfold(trange, species, bin_width_frac, time_index=0,
 
     with h5py.File(hfile, "r") as f:
         # Global Metadata
-        meta = f["meta"]
         time = f["meta"]["time"][:]
         species = f["meta"]["species"].asstr()[()]
         probe = f["meta"]["probe"].asstr()[()]
