@@ -37,9 +37,6 @@ def compute_jvec(trange, probe='1', data_rate='brst', level='l2', newname=None):
 
     Returns:
     - out_name (str): The name of the output tplot variable.
-
-    Returns:
-    - out_name (str): The name of the output tplot variable.
     """
     # Loading data
     dat = mms.fpi(trange=trange, probe=probe, data_rate=data_rate, level=level, 

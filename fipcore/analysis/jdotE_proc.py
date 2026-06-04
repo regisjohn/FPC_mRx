@@ -20,19 +20,25 @@ def compute_jdotE(jvec_var, evec_var):
     Computes the J.E dot product of two vectors jvec and evec.
 
     Parameters:
-    - jvec_var (str): name of the jvec variable
-    - evec_var (str): name of the evec variable
+    - jvec_var (str or numpy array): name of the jvec tplot variable or numpy array
+    - evec_var (str or numpy array): name of the evec tplot variable or numpy array
 
     Returns:
-    - times (numpy array): time array
+    - times (numpy array): time array or None if inputs are NumPy arrays
     - jdotE (numpy array): total J·E
     - jdotE_0 (numpy array): J·E first component
     - jdotE_1 (numpy array): J·E second component
     - jdotE_2 (numpy array): J·E third component
     """
-    # Extract data
-    times, jvec_dat = get_data(jvec_var)
-    _, evec_dat = get_data(evec_var)
+    if isinstance(jvec_var, str):
+        # Extract data
+        times, jvec_dat = get_data(jvec_var)
+        _, evec_dat = get_data(evec_var)
+    else:
+        # If inputs are NumPy arrays, use them directly
+        times = None
+        jvec_dat = jvec_var
+        evec_dat = evec_var 
 
     evec_dat = evec_dat*1e-3
 
