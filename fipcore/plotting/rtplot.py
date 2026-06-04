@@ -1,10 +1,10 @@
 """
 ================================================================================
 Plotting function that creates a pyspeadas style tplot of Nx1 subplots for 
-MMS FPC data.
+tplot variables.
 
 Functions:
-- rtplot: Nx1 subplot of MMS FPC data.
+- rtplot: Nx1 subplot of tplot variables.
 
 Author: Regis John
 Created: 2026-03-31
@@ -18,7 +18,7 @@ def rtplot(varlist, tind_lims=None, figsize=(12, 2.5), yzero_line=True,
           **styles):
     """
     Plotting function that creates a pyspeadas style tplot of Nx1 subplots for 
-    MMS FPC data.
+    tplot variables.
 
     Parameters:
     - varlist (list): List of tplot variable names to plot.

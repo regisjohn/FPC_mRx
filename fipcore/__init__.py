@@ -10,8 +10,6 @@ __author__ = "Regis John"
 from .analysis.evec_proc import *
 from .analysis.fpc_proc import *
 from .analysis.fpc_mrx_main import *
-from .analysis.fpc_mrx_fold import *
-from .analysis.mms_jvec_main import *
 from .analysis.jvec_proc import *
 from .analysis.jdotE_proc import *
 from .analysis.vdf_proc import *
@@ -31,8 +29,8 @@ from .utils.io_utils import *
 
 
 __all__ = [
-    "evec_proc", "fpc_proc", "fpc_mrx_main", "jvec_proc", 
-    "jdotE_proc", "vdf_proc", "vel_proc", "imagecont_fpc", 
-    "imagecont_vdf", "imagecont_vdf_fpc", "plt_vmap_check", 
-    "rtplot", "coord_utils", "helper_utils", "io_utils"
+    "evec_proc", "fpc_proc", "fpc_mrx_main", "jvec_proc", "jdotE_proc", 
+    "vdf_proc", "vel_proc", "imagecont_fpc", "imagecont_vdf", 
+    "imagecont_vdf_fpc", "plt_vmap_check", "rtplot", "coord_utils", 
+    "helper_utils", "io_utils"
 ]
