@@ -150,7 +150,7 @@ def fpc_mrx_main(trange, species='e', vth_lim=3.5, bin_width_frac=0.25, mean_phi
     # --- Compute Volume Element --- 
     vvol = vel.compute_vbin_vol(vbin)
 
-    # # --- Process VDF ---
+    # --- Process VDF ---
     vdf_raw, vdf_vol = vdf.process_vdf('vdf_raw', 'vdf_err', 'dq_flags', vvol)
 
     # --- Binning the VDF ---

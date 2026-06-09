@@ -164,7 +164,7 @@ def bl_recx_idx(bvec_lmn):
 
 def compute_vth(t_para, t_perp, species='e'):
     """
-    Compute the thermal velocity of a species given the parallel and 
+    Compute the thermal speed of a species given the parallel and 
     perpendicular temperatures.
 
     Parameters
