@@ -195,7 +195,7 @@ def compute_vth(t_para, t_perp, species='e'):
     else:
         raise ValueError("Species must be 'ion' or 'electron'")
 
-    # 2. Get Data
+    # Get Data
     _, t_para = get_data(t_para)
     _, t_perp = get_data(t_perp)
 
@@ -347,25 +347,27 @@ def global_vmin_vmax_fpc(*arrays, upper=None):
 
 
 def print_fac_lmn_proj(trange, key="fac2lmn_proj", t_start=58, t_end=64, species='e', 
-              bin_width_frac=0.25):
+              bin_width_frac=0.25, subtract_f0=False,):
     """
     Function to print the FAC to LMN and LMN to FAC projections.
 
     Parameters:
     - trange (list of str): start time, end time] in the format:
         ['YYYY-MM-DD/hh:mm:ss','YYYY-MM-DD/hh:mm:ss'].
-    - key (str, optional): Key of the projection matrix dataset in the .h5 file. 
+    - key (str): Key of the projection matrix dataset in the .h5 file. 
         Default is 'fac2lmn_proj'.
-    - t_start (int, optional): Start time index of the data segment. Default is 58.
-    - t_end (int, optional): End time index of the data segment. Default is 64.
-    - species (str, optional): Species of particle to analyze. Default is 'e'.
-    - bin_width_frac (float, optional): Bin width fraction. Default is 0.25.
+    - t_start (int): Start time index of the data segment. Default is 58.
+    - t_end (int): End time index of the data segment. Default is 64.
+    - species (str): Species of particle to analyze. Default is 'e'.
+    - bin_width_frac (float): Bin width fraction. Default is 0.25.
+    - subtract_f0 (bool):if True, use the df suffix in the filename. Default is False.
 
     Returns:
     - None
     """
     data_dir = "data"
-    hfile_pref = f'mms_fpc_{species}_{bin_width_frac:.2f}'
+    type_tag = 'df' if subtract_f0 else 'f'
+    hfile_pref = f'fpc_mrx_{type_tag}_{species}_{bin_width_frac:.2f}'
     hfile = os.path.join(data_dir, mms_name_make(hfile_pref, trange[0], trange[1]))
     
     with h5py.File(hfile, "r") as f:

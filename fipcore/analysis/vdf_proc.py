@@ -20,43 +20,27 @@ from scipy.constants import c, physical_constants
 from pyspedas.projects import mms
 
 
-def equilibrium_vdf(vv_fac, trange, species='e', probe='1', data_rate='brst', 
-            level='l2', get_support_data=True, no_update=False, v_flow=None):
-    fpi_vars = mms.fpi(trange=trange, probe=probe, data_rate=data_rate, level=level,
-        datatype=[f'd{species}s-moms'], time_clip=True, 
-        varnames=[f'mms1_d{species}s_temppara_brst', f'mms1_d{species}s_tempperp_brst', 
-        f'mms1_d{species}s_numberdensity_brst'], get_support_data=get_support_data, 
-        no_update=no_update)
+def equilibrium_vdf(vv_fac, den, t_para, t_perp, species='e', v_flow=None):
     """
     Calculate the equilibrium gyrotropic VDF for a given species and probe in FAC.
 
     Parameters:
     - vv_fac (ndarray): Velocity vectors in the FAC frame of shape (3, 16384, ntime).
-    - trange (list of str): [start time, end time] in the format:
-        ['YYYY-MM-DD/hh:mm:ss','YYYY-MM-DD/hh:mm:ss']
+    - den (str): Name of the tplot variable containing the density.
+    - t_para (str): Name of tplot variable containing the parallel temperature.
+    - t_perp (str): Name of the tplot variable containing the perpendicular temperature.
     - species (str): Species of particle to analyze. Default is 'e'.
-    - probe (str): Probe number to analyze. Default is '1'.
-    - data_rate (str): Data rate of the data. Default is 'brst'.
-    - level (str): Level of the data. Default is 'l2'.
-    - get_support_data (bool): If True, load in support data. Default is True.
-    - no_update (bool): If True, the data will not be updated from the server. 
-        Default is False.
     - v_flow (ndarray or list): Mean flow velocity. Default is None.
 
     Returns:
     - vdf_eq (ndarray): Equilibrium gyrotropic VDF of shape (16384, ntime).
     """
+    # Extract arrays from tplot variables
+    _, den = get_data(den)    # Shape: (ntime,)
+    _, t_para = get_data(t_para)    # Shape: (ntime,)
+    _, t_perp = get_data(t_perp)    # Shape: (ntime,)
 
-    tplot_rename(f'mms1_d{species}s_temppara_brst', 't_para')
-    tplot_rename(f'mms1_d{species}s_tempperp_brst', 't_perp')
-    tplot_rename(f'mms1_d{species}s_numberdensity_brst', 'den')
-
-    # Extract arrays from tplot
-    _, den = get_data('den')    # Shape: (ntime,)
-    _, t_para = get_data('t_para')    # Shape: (ntime,)
-    _, t_perp = get_data('t_perp')    # Shape: (ntime,)
-
-        # Mass constants in MeV converted to eV
+    # Mass constants in MeV converted to eV
     if species.lower() == 'ion':
         mc2_ev = physical_constants['proton mass energy equivalent in MeV'][0] * 1e6
     elif species.lower() == 'e':
@@ -75,7 +59,6 @@ def equilibrium_vdf(vv_fac, trange, species='e', probe='1', data_rate='brst',
     v_y = vv_fac[1, :, :]  # Shape: (16384, ntime)
     v_z = vv_fac[2, :, :]  # Shape: (16384, ntime)
 
-    # Expects v_flow as a 1D array/list of shape (3,) or a 2D array of shape (3, ntime)
     if v_flow is not None:
         v_x = v_x - v_flow[0]
         v_y = v_y - v_flow[1]
@@ -92,28 +75,25 @@ def equilibrium_vdf(vv_fac, trange, species='e', probe='1', data_rate='brst',
     return vdf_eq
 
 
-def process_vdf(vdf_raw_var, vdf_err_var, dq_flags_var, vvol):
+def process_vdf(vdf_raw_var, vdf_err_var, dq_flags_var, vvol, model_vdf = None):
     """
     Process the raw velocity distribution function (VDF) data.
 
     Parameters
     ----------
-    vdf_raw_var : str
-        tplot variable of raw VDF data (time, phi, theta, energy)
-    vdf_err_var : str
-        tplot variable of error in raw VDF data (time, phi, theta, energy)
-    dq_flags_var : str
-        tplot variable of data quality flags (time, phi, theta, energy)
-    vvol : numpy.ndarray
-        Volume element (16384, n_sweeps) for weighting
+    - vdf_raw_var (str): tplot variable of raw VDF data (time, phi, theta, energy)
+    - vdf_err_var (str): tplot variable of error in raw VDF data (time, phi, theta, energy)
+    - dq_flags_var (str): tplot variable of data quality flags (time, phi, theta, energy)
+    - vvol (numpy.ndarray): Volume element (16384, n_sweeps) for weighting
+    - model_vdf (ndarray or list, optional): Model VDF to subtract 
+        (ntime, 16384 from. Default is None.
 
     Returns
     -------
-    vdf_raw : numpy.ndarray
-        Processed VDF data without volume element weighting in s^3/m^6 (bins, time)
-    vdf_vol : numpy.ndarray
-        Processed VDF data with volume weighting in m^-3 (bins, time)
-
+    vdf_raw (numpy.ndarray): Processed VDF data without volume element 
+        weighting in s^3/m^6 (bins, time)
+    vdf_vol (numpy.ndarray): Processed VDF data with volume weighting in m^-3 
+        (bins, time)
     """
     # Get Data
     vdf_rawi = get_data(vdf_raw_var).y # order (time, phi, theta, energy)
@@ -153,12 +133,13 @@ def process_vdf(vdf_raw_var, vdf_err_var, dq_flags_var, vvol):
         # Replace 0-count or negative vdf with NaN
         mask = (counts <= 0) | (vdf_rawi <= 0) | np.isnan(vdf_rawi)
         vdf_rawi[mask] = np.nan
+    
+    # Subtract equilibrium vdf
+    if model_vdf is not None:
+        vdf_rawi = vdf_rawi - model_vdf.T
 
     # Volume Weighting (Interleaved)
     # f is (ntime, 16384), vvol is (16384, n_sweeps)
-    vdf_weighted = np.zeros_like(vdf_rawi)
-
-    ntime = vdf_rawi.shape[0]
     n_sweeps = vvol.shape[1]   # 1 or 2 depending on interleaving
     # vvol is (16384, 1) for both non-interleaved and instantaneous
     ip = np.arange(ntime) % n_sweeps

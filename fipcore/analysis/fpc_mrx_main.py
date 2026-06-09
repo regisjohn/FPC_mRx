@@ -13,6 +13,7 @@ Created: 2026-03-31
 ================================================================================
 """
 
+
 import numpy as np
 import os
 from pyspedas.projects import mms
@@ -32,7 +33,8 @@ import fipcore.analysis.jdotE_proc as je
 
 def fpc_mrx_main(trange, species='e', vth_lim=3.5, bin_width_frac=0.25, mean_phi=False, 
         probe='1', data_rate='brst', level='l2', get_support_data=True, no_update=True, 
-        lmn_mat_name='lmn_matrix', fac_mat_name='fac_matrix', **kwargs):
+        lmn_mat_name='lmn_matrix', fac_mat_name='fac_matrix', subtract_f0=False, 
+        v_flow=None, **kwargs):
     """
     Master function to perform MMS FPC Analysis by calling the necessary functions.
 
@@ -53,6 +55,9 @@ def fpc_mrx_main(trange, species='e', vth_lim=3.5, bin_width_frac=0.25, mean_phi
         Default is True.
     - lmn_mat_name (str): Name of the LMN matrix. Default is 'lmn_matrix'.
     - fac_mat_name (str): Name of the FAC matrix. Default is 'fac_matrix'.
+    - subtract_f0 (bool): If True, subtract the equilibrium VDF from the raw VDF. 
+        Default is False.
+    - v_flow (ndarray or list): Mean flow velocity to use for equilibrium VDF. 
     - **kwargs: Additional keyword arguments to pass to the other functions.
 
     Returns:
@@ -64,8 +69,8 @@ def fpc_mrx_main(trange, species='e', vth_lim=3.5, bin_width_frac=0.25, mean_phi
         datatype=['des-dist', 'dis-dist', 'des-moms', 'dis-moms'], 
         time_clip=True, varnames=['mms1_des_energy_brst', 'mms1_des_phi_brst', 
         'mms1_des_bulkv_gse_brst', 'mms1_dis_bulkv_gse_brst', 'mms1_des_temppara_brst', 
-        'mms1_des_tempperp_brst', 'mms1_dis_temppara_brst', 'mms1_dis_tempperp_brst', 
-        'mms1_des_dist_brst', 'mms1_des_disterr_brst', 'mms1_des_errorflags_brst_dist'], 
+        'mms1_des_tempperp_brst', 'mms1_des_numberdensity_brst', 'mms1_des_dist_brst', 
+        'mms1_des_disterr_brst', 'mms1_des_errorflags_brst_dist'], 
         get_support_data=get_support_data, no_update=no_update)
     
     # Read in EDP data
@@ -88,9 +93,8 @@ def fpc_mrx_main(trange, species='e', vth_lim=3.5, bin_width_frac=0.25, mean_phi
     tplot_rename('mms1_des_phi_brst', 'phi')
     tplot_rename('mms1_fgm_b_gse_brst_l2_bvec', 'bvec_gse')
     tplot_rename('mms1_des_temppara_brst', 'te_para')
-    tplot_rename('mms1_des_tempperp_brst', 'te_perp')  
-    tplot_rename('mms1_dis_temppara_brst', 'ti_para')  
-    tplot_rename('mms1_dis_tempperp_brst', 'ti_perp') 
+    tplot_rename('mms1_des_tempperp_brst', 'te_perp')
+    tplot_rename('mms1_des_numberdensity_brst', 'den') 
     tplot_rename('mms1_des_dist_brst', 'vdf_raw')
     tplot_rename('mms1_des_disterr_brst', 'vdf_err')
     tplot_rename('mms1_des_errorflags_brst_dist', 'dq_flags')
@@ -150,8 +154,14 @@ def fpc_mrx_main(trange, species='e', vth_lim=3.5, bin_width_frac=0.25, mean_phi
     # --- Compute Volume Element --- 
     vvol = vel.compute_vbin_vol(vbin)
 
+    # --- Create equilibrium VDF if subtract_f0 ---
+    vdf_eq = vdf.equilibrium_vdf(vv_fac, 'den', 'te_para', 'te_perp', 
+                    species=species, v_flow=v_flow) if subtract_f0 else None
+    print(vdf_eq)
+
     # --- Process VDF ---
-    vdf_raw, vdf_vol = vdf.process_vdf('vdf_raw', 'vdf_err', 'dq_flags', vvol)
+    vdf_raw, vdf_vol = vdf.process_vdf('vdf_raw', 'vdf_err', 'dq_flags', vvol, 
+                                       model_vdf=vdf_eq)
 
     # --- Binning the VDF ---
     # in FAC:
@@ -220,6 +230,7 @@ def fpc_mrx_main(trange, species='e', vth_lim=3.5, bin_width_frac=0.25, mean_phi
 
     dat_grps = {
         "meta": {
+            "subtract_f0":      subtract_f0,
             "species":          species,
             "trange":           trange,
             "time":             time,
@@ -289,7 +300,8 @@ def fpc_mrx_main(trange, species='e', vth_lim=3.5, bin_width_frac=0.25, mean_phi
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     data_dir = os.path.join(project_root, "data")
     os.makedirs(data_dir, exist_ok=True)
-    hfile_pref = f'mms_fpc_{species}_{bin_width_frac:.2f}'
+    type_tag = 'df' if subtract_f0 else 'f'
+    hfile_pref = f'fpc_mrx_{type_tag}_{species}_{bin_width_frac:.2f}'
     hfile = os.path.join(data_dir, iout.mms_name_make(hfile_pref, trange[0], trange[1]))
     iout.h5sav(hfile, dat_grps)
 
@@ -319,7 +331,7 @@ def fpc_mrx_fold(trange, species='e', bin_width_frac=0.25, coord_type="fac"):
     # Data path setup
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     data_dir = os.path.join(project_root, "data")
-    hfile_pref = f'mms_fpc_{species}_{bin_width_frac:.2f}'
+    hfile_pref = f'fpc_mrx_{type_tag}_{species}_{bin_width_frac:.2f}'
     hfile = os.path.join(data_dir, iout.mms_name_make(hfile_pref, trange[0], trange[1]))
 
 
@@ -449,7 +461,7 @@ def fpc_mrx_jvec(trange, species='e', bin_width_frac=0.25, probe='1',
     # Data path setup
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     data_dir = os.path.join(project_root, "data")
-    hfile_pref = f'mms_fpc_{species}_{bin_width_frac:.2f}'
+    hfile_pref = f'fpc_mrx_{type_tag}_{species}_{bin_width_frac:.2f}'
     hfile = os.path.join(data_dir, iout.mms_name_make(hfile_pref, trange[0], trange[1]))
     iout.h5sav(hfile, dat_grps)
 
@@ -474,7 +486,7 @@ def fpc_mrx_jdotE(trange, species='e', bin_width_frac=0.25):
     # Data path setup
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     data_dir = os.path.join(project_root, "data")
-    hfile_pref = f'mms_fpc_{species}_{bin_width_frac:.2f}'
+    hfile_pref = f'fpc_mrx_{type_tag}_{species}_{bin_width_frac:.2f}'
     hfile = os.path.join(data_dir, iout.mms_name_make(hfile_pref, trange[0], trange[1]))
     
     # Read in required data
