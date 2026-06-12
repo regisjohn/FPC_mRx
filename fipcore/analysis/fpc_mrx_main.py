@@ -57,7 +57,8 @@ def fpc_mrx_main(trange, species='e', vth_lim=3.5, bin_width_frac=0.25, mean_phi
     - fac_mat_name (str): Name of the FAC matrix. Default is 'fac_matrix'.
     - subtract_f0 (bool): If True, subtract the equilibrium VDF from the raw VDF. 
         Default is False.
-    - v_flow (ndarray or list): Mean flow velocity to use for equilibrium VDF. 
+    - v_flow (ndarray or list): Mean flow velocity in m/s to use for equilibrium VDF. 
+        Default is None. 
     - **kwargs: Additional keyword arguments to pass to the other functions.
 
     Returns:
@@ -154,14 +155,14 @@ def fpc_mrx_main(trange, species='e', vth_lim=3.5, bin_width_frac=0.25, mean_phi
     # --- Compute Volume Element --- 
     vvol = vel.compute_vbin_vol(vbin)
 
-    # --- Create equilibrium VDF if subtract_f0 ---
-    vdf_eq = vdf.equilibrium_vdf(vv_fac, 'den', 'te_para', 'te_perp', 
-                    species=species, v_flow=v_flow) if subtract_f0 else None
-    print(vdf_eq)
-
     # --- Process VDF ---
-    vdf_raw, vdf_vol = vdf.process_vdf('vdf_raw', 'vdf_err', 'dq_flags', vvol, 
-                                       model_vdf=vdf_eq)
+    vdf_raw, vdf_vol = vdf.process_vdf('vdf_raw', 'vdf_err', 'dq_flags', vvol)
+
+    # --- Create equilibrium VDF if subtract_f0 ---
+    if subtract_f0:
+        vdf_eq = vdf.equilibrium_vdf(vv_fac, 'den', 'te_para', 'te_perp', 
+                        species=species, v_flow=v_flow)
+        vdf_vol -= vdf_eq*vvol # delta_f
 
     # --- Binning the VDF ---
     # in FAC:
@@ -245,10 +246,11 @@ def fpc_mrx_main(trange, species='e', vth_lim=3.5, bin_width_frac=0.25, mean_phi
             "probe":            probe,
             "data_rate":        data_rate,
             "level":            level,
+            "vdf_raw":          vdf_raw,
+            "vdf_vol":          vdf_vol,
         },
         "gse": {
-            "vv_coord":      vv,
-            "vdf_vol":       vdf_vol,
+            "vv":            vv,
             "bvec":          bvec_gse,
             "evec_lor":      evec_lor_gse,
         },
@@ -296,6 +298,9 @@ def fpc_mrx_main(trange, species='e', vth_lim=3.5, bin_width_frac=0.25, mean_phi
             "edges_n":      edges_lmnn,
         }
     }
+    if subtract_f0:
+        dat_grps["fac"]["vdf_eq"] = vdf_eq
+    
     # --- Saving to a .h5 file ---
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     data_dir = os.path.join(project_root, "data")
@@ -310,7 +315,8 @@ def fpc_mrx_main(trange, species='e', vth_lim=3.5, bin_width_frac=0.25, mean_phi
     return hfile
 
 
-def fpc_mrx_fold(trange, species='e', bin_width_frac=0.25, coord_type="fac"):
+def fpc_mrx_fold(trange, species='e', bin_width_frac=0.25, coord_type="fac", 
+        subtract_f0=False):
     """
     Computes folded FPC (Field Particle Correlation) data for a given time range
     and species.
@@ -322,6 +328,7 @@ def fpc_mrx_fold(trange, species='e', bin_width_frac=0.25, coord_type="fac"):
     - bin_width_frac (float): Fraction of the thermal velocity used to 
         determine the bin width. Default is 0.25.   
     - coord_type (str): The type of coordinate system to use. Default is "fac".
+    - subtract_f0 (bool): if True, use the df suffix in the filename. Default is False.
 
     Returns:
     - hfile (str): Full path of the .h5 file containing the results of the 
@@ -331,6 +338,7 @@ def fpc_mrx_fold(trange, species='e', bin_width_frac=0.25, coord_type="fac"):
     # Data path setup
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     data_dir = os.path.join(project_root, "data")
+    type_tag = 'df' if subtract_f0 else 'f'
     hfile_pref = f'fpc_mrx_{type_tag}_{species}_{bin_width_frac:.2f}'
     hfile = os.path.join(data_dir, iout.mms_name_make(hfile_pref, trange[0], trange[1]))
 
@@ -392,7 +400,7 @@ def fpc_mrx_fold(trange, species='e', bin_width_frac=0.25, coord_type="fac"):
 
 
 def fpc_mrx_jvec(trange, species='e', bin_width_frac=0.25, probe='1', 
-    data_rate='brst', level='l2'):
+    data_rate='brst', level='l2', subtract_f0=False):
     """
     Master function to compute MMS current density in various coordinates and 
     save to an existing .h5 file.
@@ -406,6 +414,7 @@ def fpc_mrx_jvec(trange, species='e', bin_width_frac=0.25, probe='1',
     - probe (str): Probe number to analyze. Default is '1'.
     - data_rate (str): Data rate of the data. Default is 'brst'.
     - level (str): Level of the data. Default is 'l2'.
+    - subtract_f0 (bool): if True, use the df suffix in the filename. Default is False.
 
     Returns:
     - hfile (str): Full path of the .h5 file containing the data.
@@ -461,6 +470,7 @@ def fpc_mrx_jvec(trange, species='e', bin_width_frac=0.25, probe='1',
     # Data path setup
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     data_dir = os.path.join(project_root, "data")
+    type_tag = 'df' if subtract_f0 else 'f'
     hfile_pref = f'fpc_mrx_{type_tag}_{species}_{bin_width_frac:.2f}'
     hfile = os.path.join(data_dir, iout.mms_name_make(hfile_pref, trange[0], trange[1]))
     iout.h5sav(hfile, dat_grps)
@@ -468,7 +478,7 @@ def fpc_mrx_jvec(trange, species='e', bin_width_frac=0.25, probe='1',
     return hfile
 
 
-def fpc_mrx_jdotE(trange, species='e', bin_width_frac=0.25):
+def fpc_mrx_jdotE(trange, species='e', bin_width_frac=0.25, subtract_f0=False):
     """
     Computes the J·E dot product for a given species and time range.
     
@@ -478,6 +488,7 @@ def fpc_mrx_jdotE(trange, species='e', bin_width_frac=0.25):
     - species (str): Species of particle to analyze. Default is 'e'.
     - bin_width_frac (float): Fraction of the thermal velocity used to 
         determine the bin width. Default is 0.25.
+    - subtract_f0 (bool): if True, use the df suffix in the filename. Default is False.
     
     Returns:
     - hfile (str): Full path of the .h5 file containing the data.
@@ -486,6 +497,7 @@ def fpc_mrx_jdotE(trange, species='e', bin_width_frac=0.25):
     # Data path setup
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     data_dir = os.path.join(project_root, "data")
+    type_tag = 'df' if subtract_f0 else 'f'
     hfile_pref = f'fpc_mrx_{type_tag}_{species}_{bin_width_frac:.2f}'
     hfile = os.path.join(data_dir, iout.mms_name_make(hfile_pref, trange[0], trange[1]))
     

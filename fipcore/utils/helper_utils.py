@@ -360,7 +360,7 @@ def print_fac_lmn_proj(trange, key="fac2lmn_proj", t_start=58, t_end=64, species
     - t_end (int): End time index of the data segment. Default is 64.
     - species (str): Species of particle to analyze. Default is 'e'.
     - bin_width_frac (float): Bin width fraction. Default is 0.25.
-    - subtract_f0 (bool):if True, use the df suffix in the filename. Default is False.
+    - subtract_f0 (bool): if True, use the df suffix in the filename. Default is False.
 
     Returns:
     - None

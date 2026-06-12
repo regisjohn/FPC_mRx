@@ -101,7 +101,7 @@ def vbin_to_vv(vbin, phi_var, mean_phi=False):
     - mean_phi: bool, whether to use mean phi values or instantaneous phi values (default=False)
     
     Returns:
-    - vv: np.array of shape (3, 16384, ntime)
+    - vv: np.array of shape (3, 16384, ntime) in km/s
     """
     # Constants
     N_PHI, N_THETA, N_ENERGY = 32, 16, 32
@@ -153,10 +153,10 @@ def vi_bl_flip(idx, bulk_vi_gse):
 
     Parameters:
     - idx: int; index of the B_L reversal point
-    - bulk_vi_gse: str; name of the bulk ion velocity tplot variable
+    - bulk_vi_gse: str; name of the bulk ion velocity tplot variable in km/s
 
     Returns:
-    - bulk_vi_rev: float bulk ion velocity at the B_L reversal point
+    - bulk_vi_rev: float bulk ion velocity at the B_L reversal point in km/s
     """
     _, bulk_vi_gse = get_data(bulk_vi_gse)
     # Find bulk ion velocity at B_L reversal:
@@ -171,11 +171,11 @@ def vv_to_recx(vv, vi):
     Convert velocity vectors in gse frame to reconnection frame coordinates.
 
     Parameters:
-    - vv: np.array of shape (3, nbin, npts); velocity vectors in instrument frame
-    - vi: np.array of shape (3,); bulk ion velocity vector in reconnection frame
+    - vv: np.array of shape (3, nbin, npts); velocity vectors in instrument frame in km/s
+    - vi: np.array of shape (3,); bulk ion velocity vector in reconnection frame in km/s
 
     Returns:
-    - vv_recx: np.array of shape (3, nbin, npts); velocity vectors in reconnection frame
+    - vv_recx: np.array of shape (3, nbin, npts); velocity vectors in reconnection frame in km/s
     """
     # Reshape vi so each component can broadcast across all bins and times
     vi_reshaped = vi[:, None, None]   # (3,1,1)
@@ -191,12 +191,12 @@ def vv_to_fac(vv, fac_matrix):
     Rotate velocity vectors to the FAC frame.
 
     Parameters:
-    - vv : np.array(3, nbin, nsweeps). Velocity vectors (GSE/Reconnection frame). 
+    - vv : np.array(3, nbin, nsweeps). Velocity vectors (GSE/Reconnection frame) in km/s. 
         nsweeps is 2 (interleaved), 1 (non-interleaved), or ntime (instantaneous).
     - fac_matrix: np.array of shape (ntime, 3, 3); FAC rotation matrix for each time
 
     Returns:
-    - vv_fac: np.array of shape (3, nbin, npts); velocity vectors in FAC frame
+    - vv_fac: np.array of shape (3, nbin, npts); velocity vectors in FAC frame in km/s.
     """
 
     ntime = fac_matrix.shape[0] # length of time window
@@ -229,11 +229,11 @@ def vv_to_lmn(vv, lmn_matrix):
     Rotate velocity vectors to the LMN frame.
 
     Parameters:
-    - vv: np.array of shape (3, nbin, npts); velocity vectors in gse or reconnection frame
+    - vv: np.array of shape (3, nbin, npts); velocity vectors in gse or reconnection frame in km/s
     - lmn_matrix: np.array of shape (1,3,3) or (3,3); LMN rotation matrix
 
     Returns:
-    - vv_lmn: np.array of shape (3, nbin, npts); velocity vectors in LMN frame
+    - vv_lmn: np.array of shape (3, nbin, npts); velocity vectors in LMN frame in km/s
     """
     # Accept either shape (1,3,3) or (3,3)
     if lmn_matrix.ndim == 3:
@@ -252,8 +252,8 @@ def vv_to_vmap(vv_coord, vth_mean, vth_lim=3.5, bin_width_frac=0.1):
     Map velocity vectors to bin indices in normalized velocity space.
 
     Parameters:
-    - vv_coord: np.array of shape (3, nbin, npts); velocity vectors in a frame
-    - vth_mean: float; mean thermal velocity for normalization
+    - vv_coord: np.array of shape (3, nbin, npts); velocity vectors in a frame in km/s
+    - vth_mean: float; mean thermal velocity for normalization in km/s
     - vth_lim: float, optional; limit of normalized velocity space (default: 3.5)
     - bin_width_frac: float, optional; fraction of v_range for bin width (default: 0.1)
 
@@ -301,8 +301,8 @@ def vv_to_vmap_3d(vv_coord, vth_mean, vth_lim=(3.5, 3.5, 3.5),
     should use 'vv_to_vmap' instead.
 
     Parameters:
-    - vv_coord: np.array of shape (3, nbin, npts); velocity vectors in a frame
-    - vth_mean: float; mean thermal velocity for normalization
+    - vv_coord: np.array of shape (3, nbin, npts); velocity vectors in a frame in km/s
+    - vth_mean: float; mean thermal velocity for normalization in km/s
     - vth_lim: tuple of 3 floats; limits of normalized velocity space for each 
         component (default: 3.5)
     - bin_width_frac: tuple of 3 floats; fraction of v_range for bin width for 
@@ -357,10 +357,10 @@ def compute_vbin_vol(vbin):
     - vbin: np.array of shape (n_sweeps, n_vbin); velocity bin centers
 
     Returns:
-    - vvol: np.array of shape (16384, n_sweeps); velocity bin volumes
+    - vvol: np.array of shape (16384, n_sweeps); velocity bin volumes in (m/s)^3
     """
     # --- Compute velocity edges from centers ---   
-    n_interleave = vbin.shape[0]   # 1 or 2
+    n_interleave = vbin.shape[0]   # 1 or 2 or ntime
     n_vbin = vbin.shape[1] # usually 32
     v_centers = vbin * 1e3 # convert km/s to m/s
 
