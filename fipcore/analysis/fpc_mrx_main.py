@@ -306,7 +306,7 @@ def fpc_mrx_main(trange, species='e', vth_lim=3.5, bin_width_frac=0.25, mean_phi
     data_dir = os.path.join(project_root, "data")
     os.makedirs(data_dir, exist_ok=True)
     type_tag = 'df' if subtract_f0 else 'f'
-    hfile_pref = f'fpc_mrx_{type_tag}_{species}_{bin_width_frac:.2f}'
+    hfile_pref = f'mms{probe}_{data_rate}_{type_tag}_{species}_{bin_width_frac:.2f}'
     hfile = os.path.join(data_dir, iout.mms_name_make(hfile_pref, trange[0], trange[1]))
     iout.h5sav(hfile, dat_grps)
 
@@ -315,8 +315,8 @@ def fpc_mrx_main(trange, species='e', vth_lim=3.5, bin_width_frac=0.25, mean_phi
     return hfile
 
 
-def fpc_mrx_fold(trange, species='e', bin_width_frac=0.25, coord_type="fac", 
-        subtract_f0=False):
+def fpc_mrx_fold(trange, species='e', probe='1', data_rate='brst', 
+    bin_width_frac=0.25, coord_type="fac", subtract_f0=False):
     """
     Computes folded FPC (Field Particle Correlation) data for a given time range
     and species.
@@ -325,6 +325,8 @@ def fpc_mrx_fold(trange, species='e', bin_width_frac=0.25, coord_type="fac",
     - trange (list of str): [start time, end time] in the format:
         ['YYYY-MM-DD/hh:mm:ss','YYYY-MM-DD/hh:mm:ss']
     - species (str): Species of particle to analyze. Default is 'e'. 
+    - probe (str): Probe number. Default is '1'.
+    - data_rate (str): Data rate. Default is 'brst'.
     - bin_width_frac (float): Fraction of the thermal velocity used to 
         determine the bin width. Default is 0.25.   
     - coord_type (str): The type of coordinate system to use. Default is "fac".
@@ -339,7 +341,7 @@ def fpc_mrx_fold(trange, species='e', bin_width_frac=0.25, coord_type="fac",
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     data_dir = os.path.join(project_root, "data")
     type_tag = 'df' if subtract_f0 else 'f'
-    hfile_pref = f'fpc_mrx_{type_tag}_{species}_{bin_width_frac:.2f}'
+    hfile_pref = f'mms{probe}_{data_rate}_{type_tag}_{species}_{bin_width_frac:.2f}'
     hfile = os.path.join(data_dir, iout.mms_name_make(hfile_pref, trange[0], trange[1]))
 
 
@@ -399,8 +401,8 @@ def fpc_mrx_fold(trange, species='e', bin_width_frac=0.25, coord_type="fac",
     return hfile
 
 
-def fpc_mrx_jvec(trange, species='e', bin_width_frac=0.25, probe='1', 
-    data_rate='brst', level='l2', subtract_f0=False):
+def fpc_mrx_jvec(trange, species='e', probe='1', data_rate='brst', bin_width_frac=0.25, 
+    level='l2', subtract_f0=False):
     """
     Master function to compute MMS current density in various coordinates and 
     save to an existing .h5 file.
@@ -409,10 +411,10 @@ def fpc_mrx_jvec(trange, species='e', bin_width_frac=0.25, probe='1',
     - trange (list of str): [start time, end time] in the format:
         ['YYYY-MM-DD/hh:mm:ss','YYYY-MM-DD/hh:mm:ss']
     - species (str): Species of particle to analyze. Default is 'e'.
-    - bin_width_frac (float): Fraction of the thermal velocity used to 
-        determine the bin width. Default is 0.25.
     - probe (str): Probe number to analyze. Default is '1'.
     - data_rate (str): Data rate of the data. Default is 'brst'.
+    - bin_width_frac (float): Fraction of the thermal velocity used to 
+        determine the bin width. Default is 0.25.
     - level (str): Level of the data. Default is 'l2'.
     - subtract_f0 (bool): if True, use the df suffix in the filename. Default is False.
 
@@ -471,14 +473,15 @@ def fpc_mrx_jvec(trange, species='e', bin_width_frac=0.25, probe='1',
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     data_dir = os.path.join(project_root, "data")
     type_tag = 'df' if subtract_f0 else 'f'
-    hfile_pref = f'fpc_mrx_{type_tag}_{species}_{bin_width_frac:.2f}'
+    hfile_pref = f'mms{probe}_{data_rate}_{type_tag}_{species}_{bin_width_frac:.2f}'
     hfile = os.path.join(data_dir, iout.mms_name_make(hfile_pref, trange[0], trange[1]))
     iout.h5sav(hfile, dat_grps)
 
     return hfile
 
 
-def fpc_mrx_jdotE(trange, species='e', bin_width_frac=0.25, subtract_f0=False):
+def fpc_mrx_jdotE(trange, species='e', probe='1', data_rate='brst', 
+    bin_width_frac=0.25, subtract_f0=False):
     """
     Computes the J·E dot product for a given species and time range.
     
@@ -486,6 +489,8 @@ def fpc_mrx_jdotE(trange, species='e', bin_width_frac=0.25, subtract_f0=False):
     - trange (list of str): [start time, end time] in the format:
         ['YYYY-MM-DD/hh:mm:ss','YYYY-MM-DD/hh:mm:ss']
     - species (str): Species of particle to analyze. Default is 'e'.
+    - probe (str): Probe number to analyze. Default is '1'.
+    - data_rate (str): Data rate of the data. Default is 'brst'.
     - bin_width_frac (float): Fraction of the thermal velocity used to 
         determine the bin width. Default is 0.25.
     - subtract_f0 (bool): if True, use the df suffix in the filename. Default is False.
@@ -498,7 +503,7 @@ def fpc_mrx_jdotE(trange, species='e', bin_width_frac=0.25, subtract_f0=False):
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     data_dir = os.path.join(project_root, "data")
     type_tag = 'df' if subtract_f0 else 'f'
-    hfile_pref = f'fpc_mrx_{type_tag}_{species}_{bin_width_frac:.2f}'
+    hfile_pref = f'mms{probe}_{data_rate}_{type_tag}_{species}_{bin_width_frac:.2f}'
     hfile = os.path.join(data_dir, iout.mms_name_make(hfile_pref, trange[0], trange[1]))
     
     # Read in required data

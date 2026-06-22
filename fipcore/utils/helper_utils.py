@@ -346,8 +346,9 @@ def global_vmin_vmax_fpc(*arrays, upper=None):
     return -max_abs, +max_abs
 
 
-def print_fac_lmn_proj(trange, key="fac2lmn_proj", t_start=58, t_end=64, species='e', 
-              bin_width_frac=0.25, subtract_f0=False,):
+def print_fac_lmn_proj(trange, key="fac2lmn_proj", t_start=58, t_end=64, 
+        species='e', probe='1', data_rate='brst', bin_width_frac=0.25, 
+        subtract_f0=False):
     """
     Function to print the FAC to LMN and LMN to FAC projections.
 
@@ -359,6 +360,8 @@ def print_fac_lmn_proj(trange, key="fac2lmn_proj", t_start=58, t_end=64, species
     - t_start (int): Start time index of the data segment. Default is 58.
     - t_end (int): End time index of the data segment. Default is 64.
     - species (str): Species of particle to analyze. Default is 'e'.
+    - probe (str): Probe number to analyze. Default is '1'.
+    - data_rate (str): Data rate of the data. Default is 'brst'.
     - bin_width_frac (float): Bin width fraction. Default is 0.25.
     - subtract_f0 (bool): if True, use the df suffix in the filename. Default is False.
 
@@ -367,7 +370,7 @@ def print_fac_lmn_proj(trange, key="fac2lmn_proj", t_start=58, t_end=64, species
     """
     data_dir = "data"
     type_tag = 'df' if subtract_f0 else 'f'
-    hfile_pref = f'fpc_mrx_{type_tag}_{species}_{bin_width_frac:.2f}'
+    hfile_pref = f'mms{probe}_{data_rate}_{type_tag}_{species}_{bin_width_frac:.2f}'
     hfile = os.path.join(data_dir, mms_name_make(hfile_pref, trange[0], trange[1]))
     
     with h5py.File(hfile, "r") as f:

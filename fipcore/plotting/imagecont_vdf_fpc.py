@@ -23,10 +23,10 @@ from fipcore.plotting.imagecont_vdf import imagecont_vdf
 from fipcore.plotting.imagecont_fpc import imagecont_fpc
 
 
-def imagecont_vdf_fpc(trange, species, bin_width_frac, time_index=0,
-                          coord_type='both', suptitle_sfx=None, dpi_val=100, 
-                          axis_fntsz=16, cbar_ht=0.050, save_fig=False, 
-                          outdir_sfx='', show_tind=True, subtract_f0=False, **kwargs):
+def imagecont_vdf_fpc(trange, species, bin_width_frac, time_index=0, probe='1', 
+                        data_rate='brst', coord_type='both', suptitle_sfx=None, 
+                        dpi_val=100, axis_fntsz=16, cbar_ht=0.050, save_fig=False, 
+                        outdir_sfx='', show_tind=True, subtract_f0=False, **kwargs):
     """
     Master function to generate 12 panel subplots of VDF and FPC components for 
     a given time index with the VDFs on the top row and the FPCs on the bottom 
@@ -38,6 +38,8 @@ def imagecont_vdf_fpc(trange, species, bin_width_frac, time_index=0,
     - species (str): species name ('e' or 'i').
     - bin_width_frac (float): bin width as a fraction of thermal velocity.
     - time_index (int): time index for the plot.
+    - probe (str): Probe number to analyze. Default is '1'.
+    - data_rate (str): Data rate of the data. Default is 'brst'.
     - coord_type (str): coordinate system to use ('fac', 'lmn', or 'both').
     - suptitle_sfx (str or None): suffix for the suptitle.
     - dpi_val (int): DPI value for the plot.
@@ -59,7 +61,7 @@ def imagecont_vdf_fpc(trange, species, bin_width_frac, time_index=0,
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     data_dir = os.path.join(project_root, "data")
     type_tag = 'df' if subtract_f0 else 'f'
-    hfile_pref = f'fpc_mrx_{type_tag}_{species}_{bin_width_frac:.2f}'
+    hfile_pref = f'mms{probe}_{data_rate}_{type_tag}_{species}_{bin_width_frac:.2f}'
     hfile = os.path.join(data_dir, mms_name_make(hfile_pref, trange[0], trange[1]))
 
     with h5py.File(hfile, "r") as f:
@@ -130,7 +132,7 @@ def imagecont_vdf_fpc(trange, species, bin_width_frac, time_index=0,
             if save_fig:
                 plot_name = f"fpc_mrx_{species}_{ct}_{bin_width_frac:.2f}_{time_index}.png"
                 sfx_str = f"_{outdir_sfx}" if outdir_sfx else ""
-                plot_dir = f'plots_fac{sfx_str}'
+                plot_dir = f'plots_{ct}{sfx_str}'
                 output_dir = os.path.join(project_root, plot_dir)
                 os.makedirs(output_dir, exist_ok=True)
                 fig.savefig(os.path.join(output_dir, plot_name), dpi=dpi_val, bbox_inches='tight')
@@ -226,10 +228,10 @@ def imagecont_vdf_fpc_panel(vdf_2d, cx_2d, cy_2d, cz_2d, ax_pairs, axlabels_pair
     return fig, axes
 
 
-def imagecont_vdf_fpcfold(trange, species, bin_width_frac, time_index=0,
-                          coord_type='fac', suptitle_sfx=None, dpi_val=100, 
-                          axis_fntsz=16, cbar_ht=0.050, save_fig=False, 
-                          outdir_sfx='', show_tind=True, subtract_f0=False, **kwargs):
+def imagecont_vdf_fpcfold(trange, species, bin_width_frac, time_index=0, probe='1', 
+                        data_rate='brst', coord_type='fac', suptitle_sfx=None, 
+                        dpi_val=100, axis_fntsz=16, cbar_ht=0.050, save_fig=False, 
+                        outdir_sfx='', show_tind=True, subtract_f0=False, **kwargs):
     """
     Master function to generate 12 panel subplots of VDF and FPC components for 
     a given time index with the VDFs on the top row and the FPCs on the bottom 
@@ -241,6 +243,8 @@ def imagecont_vdf_fpcfold(trange, species, bin_width_frac, time_index=0,
     - species (str): species name ('e' or 'i').
     - bin_width_frac (float): bin width as a fraction of thermal velocity.
     - time_index (int): time index for the plot.
+    - probe (str): Probe number to analyze. Default is '1'.
+    - data_rate (str): Data rate of the data. Default is 'brst'.
     - coord_type (str): coordinate system to use ('fac', 'lmn', or 'both').
     - suptitle_sfx (str or None): suffix for the suptitle.
     - dpi_val (int): DPI value for the plot.
@@ -262,7 +266,7 @@ def imagecont_vdf_fpcfold(trange, species, bin_width_frac, time_index=0,
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     data_dir = os.path.join(project_root, "data")
     type_tag = 'df' if subtract_f0 else 'f'
-    hfile_pref = f'fpc_mrx_{type_tag}_{species}_{bin_width_frac:.2f}'
+    hfile_pref = f'mms{probe}_{data_rate}_{type_tag}_{species}_{bin_width_frac:.2f}'
     hfile = os.path.join(data_dir, mms_name_make(hfile_pref, trange[0], trange[1]))
 
     with h5py.File(hfile, "r") as f:
