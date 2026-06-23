@@ -13,6 +13,9 @@ Functions:
 - global_vmin_vmax_vdf: Compute the global minimum and maximum of a set of vdfs.
 - global_vmin_vmax_fpc: Compute the global minimum and maximum of a set of fpc data.
 - print_fac_lmn_proj: Print the FAC to LMN and LMN to FAC projections.
+- compute_beta_par: Compute the parallel plasma beta profile.
+- compute_beta_perp: Compute the perpendicular plasma beta profile.
+- compute_beta_scalar: Compute the scalar plasma beta profile.
 
 Author: Regis John
 Created: 2026-03-25
@@ -392,3 +395,59 @@ def print_fac_lmn_proj(trange, key="fac2lmn_proj", t_start=58, t_end=64,
         print(f"  e_L = {eL[0]: .3f} e_perp1  {eL[1]: .3f} e_perp2  {eL[2]: .3f} e_par")
         print(f"  e_M = {eM[0]: .3f} e_perp1  {eM[1]: .3f} e_perp2  {eM[2]: .3f} e_par")
         print(f"  e_N = {eN[0]: .3f} e_perp1  {eN[1]: .3f} e_perp2  {eN[2]: .3f} e_par")
+
+
+def compute_beta_par(den, t_para, b_mag):
+    """
+    Function to compute the plasma beta profile using parallel temperature. 
+
+    Parameters:
+    - den (ndarray): Density array in cm^-3.
+    - t_para (ndarray): Temperature array in eV.
+    - b_mag (ndarray): Magnetic field array in nT.
+    
+    Returns:
+    - beta_par (ndarray): Parallel plasma beta profile.
+    """
+    
+    p_para = (den * 1e6) * e * t_para # density in m^3, temperature in K
+    p_mag = (b_mag * 1e-9)**2 / (2.0 * mu_0) # magnetic field from nT to T
+    return p_para / p_mag
+
+
+def compute_beta_perp(den, t_perp, b_mag):
+    """
+    Function to compute the plasma beta profile using perpendicular temperature. 
+
+    Parameters:
+    - den (ndarray): Density array in cm^-3.
+    - t_perp (ndarray): Temperature array in eV.
+    - b_mag (ndarray): Magnetic field array in nT.
+    
+    Returns:
+    - beta_perp (ndarray): Perpendicular plasma beta profile.
+    """
+    
+    
+    p_perp = (den * 1e6) * e * t_perp # density in m^3, temperature in K
+    p_mag = (b_mag * 1e-9)**2 / (2.0 * mu_0) # magnetic field from nT to T
+    return p_perp / p_mag
+
+def compute_beta_scalar(den, t_para, t_perp, b_mag):
+    """
+    Function to compute the plasma beta profile using scalar temperature. 
+
+    Parameters:
+    - den (ndarray): Density array in cm^-3.
+    - t_para (ndarray): Parallel temperature array in eV.
+    - t_perp (ndarray): Perpendicular temperature array in eV.
+    - b_mag (ndarray): Magnetic field array in nT.
+    
+    Returns:
+    - beta_scalar (ndarray): Scalar plasma beta profile.
+    """
+    
+    t_avg = (t_para + 2.0 * t_perp) / 3.0
+    p_total = (den * 1e6) * e * t_avg # density in m^3, temperature in K
+    p_mag = (b_mag * 1e-9)**2 / (2.0 * mu_0) # magnetic field from nT to T
+    return p_total / p_mag
