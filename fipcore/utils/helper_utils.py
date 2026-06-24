@@ -24,7 +24,7 @@ Created: 2026-03-25
 
 import numpy as np
 from pyspedas import tres, avg_data, tinterpol, get_data, time_string
-from scipy.constants import c, physical_constants
+from scipy.constants import c, physical_constants, e, mu_0
 import h5py
 import os
 
