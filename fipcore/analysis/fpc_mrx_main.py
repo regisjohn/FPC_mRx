@@ -65,41 +65,48 @@ def fpc_mrx_main(trange, species='e', vth_lim=3.5, bin_width_frac=0.25, mean_phi
     - hfile (str): Full path of the .h5 file containing the results of the analysis.
     """
     # --- MMS Data Loading --- 
+    # Probe and species tag filtering
+    p = str(probe)
+    spec_tag = 'des' if species == 'e' else 'dis'
+    
     # Read in FPI data
     fpi_vars = mms.fpi(trange= trange, probe=probe, data_rate=data_rate, level=level,
         datatype=['des-dist', 'dis-dist', 'des-moms', 'dis-moms'], 
-        time_clip=True, varnames=['mms1_des_energy_brst', 'mms1_des_phi_brst', 
-        'mms1_des_bulkv_gse_brst', 'mms1_dis_bulkv_gse_brst', 'mms1_des_temppara_brst', 
-        'mms1_des_tempperp_brst', 'mms1_des_numberdensity_brst', 'mms1_des_dist_brst', 
-        'mms1_des_disterr_brst', 'mms1_des_errorflags_brst_dist'], 
+        time_clip=True, varnames=[f'mms{p}_{spec_tag}_energy_brst', f'mms{p}_{spec_tag}_phi_brst', 
+        f'mms{p}_{spec_tag}_bulkv_gse_brst', f'mms{p}_dis_bulkv_gse_brst', 
+        f'mms{p}_{spec_tag}_temppara_brst', f'mms{p}_{spec_tag}_tempperp_brst', 
+        f'mms{p}_{spec_tag}_numberdensity_brst', f'mms{p}_{spec_tag}_dist_brst', 
+        f'mms{p}_{spec_tag}_disterr_brst', f'mms{p}_{spec_tag}_errorflags_brst_dist'], 
         get_support_data=get_support_data, no_update=no_update)
     
     # Read in EDP data
     edp_vars = mms.edp(trange=trange, probe=probe, data_rate=data_rate, level=level,
         datatype=['dce', 'scpot'],
-        time_clip=True, varnames=['mms1_edp_scpot_brst_l2', 
-        'mms1_edp_dce_gse_brst_l2', 'mms1_edp_dce_par_epar_brst_l2'], 
+        time_clip=True, varnames=[f'mms{p}_edp_scpot_brst_l2', 
+        f'mms{p}_edp_dce_gse_brst_l2', f'mms{p}_edp_dce_par_epar_brst_l2'], 
         get_support_data=get_support_data, no_update=no_update)
     
     # Read in FGM data
     fgm_vars = mms.fgm(trange=trange, probe=probe, data_rate=data_rate, level=level,
-        varnames='mms1_fgm_b_gse_brst_l2', time_clip=True, 
+        varnames=f'mms{p}_fgm_b_gse_brst_l2', time_clip=True, 
         get_support_data=get_support_data, no_update=no_update)
     
+    God is great!
+    
     # Renaming tplot variables
-    tplot_rename('mms1_des_energy_brst', 'nrgy')
-    tplot_rename('mms1_edp_scpot_brst_l2', 'scpot')
-    tplot_rename('mms1_des_bulkv_gse_brst', 'bulk_ve_gse')
-    tplot_rename('mms1_dis_bulkv_gse_brst', 'bulk_vi_gse')
-    tplot_rename('mms1_des_phi_brst', 'phi')
-    tplot_rename('mms1_fgm_b_gse_brst_l2_bvec', 'bvec_gse')
-    tplot_rename('mms1_des_temppara_brst', 'te_para')
-    tplot_rename('mms1_des_tempperp_brst', 'te_perp')
-    tplot_rename('mms1_des_numberdensity_brst', 'den') 
-    tplot_rename('mms1_des_dist_brst', 'vdf_raw')
-    tplot_rename('mms1_des_disterr_brst', 'vdf_err')
-    tplot_rename('mms1_des_errorflags_brst_dist', 'dq_flags')
-    tplot_rename('mms1_edp_dce_gse_brst_l2', 'evec_gse')
+    tplot_rename(f'mms{p}_{spec_tag}_energy_brst', 'nrgy')
+    tplot_rename(f'mms{p}_edp_scpot_brst_l2', 'scpot')
+    tplot_rename(f'mms{p}_{spec_tag}_bulkv_gse_brst', 'bulk_ve_gse')
+    tplot_rename(f'mms{p}_dis_bulkv_gse_brst', 'bulk_vi_gse')
+    tplot_rename(f'mms{p}_{spec_tag}_phi_brst', 'phi')
+    tplot_rename(f'mms{p}_fgm_b_gse_brst_l2_bvec', 'bvec_gse')
+    tplot_rename(f'mms{p}_des_temppara_brst', 'te_para')
+    tplot_rename(f'mms{p}_des_tempperp_brst', 'te_perp')
+    tplot_rename(f'mms{p}_des_numberdensity_brst', 'den') 
+    tplot_rename(f'mms{p}_des_dist_brst', 'vdf_raw')
+    tplot_rename(f'mms{p}_des_disterr_brst', 'vdf_err')
+    tplot_rename(f'mms{p}_des_errorflags_brst_dist', 'dq_flags')
+    tplot_rename(f'mms{p}_edp_dce_gse_brst_l2', 'evec_gse')
 
     print("Loaded MMS data!")
 

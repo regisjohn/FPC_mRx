@@ -12,7 +12,8 @@ Created: 2026-06-23
 
 from pyspedas.projects import mms
 from pyspedas import tplot_rename, get_data
-from fipcore.utils.helper_utils import downsample_cad
+from fipcore.utils.helper_utils import downsample_cad, compute_beta_par, \
+    compute_beta_perp, compute_beta_scalar
 
 
 def compute_beta_profiles(trange, species='e', probe='1', data_rate='brst', 
