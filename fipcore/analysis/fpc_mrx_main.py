@@ -403,7 +403,7 @@ def fpc_mrx_fold(trange, species='e', probe='1', data_rate='brst',
 
 
 def fpc_mrx_jvec(trange, species='e', probe='1', data_rate='brst', bin_width_frac=0.25, 
-    level='l2', subtract_f0=False):
+    level='l2', subtract_f0=False, no_update=True):
     """
     Master function to compute MMS current density in various coordinates and 
     save to an existing .h5 file.
@@ -418,6 +418,8 @@ def fpc_mrx_jvec(trange, species='e', probe='1', data_rate='brst', bin_width_fra
         determine the bin width. Default is 0.25.
     - level (str): Level of the data. Default is 'l2'.
     - subtract_f0 (bool): if True, use the df suffix in the filename. Default is False.
+    - no_update (bool): if True, do not download new data. Default is True. Turn 
+        it to False to download new data if it is not available locally.
 
     Returns:
     - hfile (str): Full path of the .h5 file containing the data.
@@ -428,15 +430,15 @@ def fpc_mrx_jvec(trange, species='e', probe='1', data_rate='brst', bin_width_fra
                 level=level)
 
     # Read in magnetic field and electron bulf flow data
-    mms.fpi(trange= trange, probe=probe, data_rate=data_rate, level=level,
-    datatype=['des-moms'], time_clip=True, varnames='mms1_des_bulkv_gse_brst', 
-    get_support_data=True, no_update=True)
-    mms.fgm(trange=trange, probe=probe, data_rate=data_rate, level=level,
-        varnames='mms1_fgm_b_gse_brst_l2', time_clip=True, 
-        get_support_data=True, no_update=True)
+    t0 = mms.fpi(trange= trange, probe=probe, data_rate=data_rate, level=level,
+    datatype=['des-moms'], time_clip=True, varnames=f'mms{probe}_des_bulkv_gse_brst', 
+    get_support_data=True, no_update=no_update)
+    t1 = mms.fgm(trange=trange, probe=probe, data_rate=data_rate, level=level,
+        varnames=f'mms{probe}_fgm_b_gse_brst_l2', time_clip=True, 
+        get_support_data=True, no_update=no_update)
 
-    tplot_rename('mms1_des_bulkv_gse_brst', 'bulk_ve_gse')
-    tplot_rename('mms1_fgm_b_gse_brst_l2_bvec', 'bvec_gse')
+    tplot_rename(f'mms{probe}_des_bulkv_gse_brst', 'bulk_ve_gse')
+    tplot_rename(f'mms{probe}_fgm_b_gse_brst_l2_bvec', 'bvec_gse')
 
     # Downsample magnetic field to electron bulk flow cadence
     hutil.downsample_cad('bvec_gse', 'bulk_ve_gse', trange, newname='bvec_gse_dwn')
@@ -445,7 +447,8 @@ def fpc_mrx_jvec(trange, species='e', probe='1', data_rate='brst', bin_width_fra
     fac_mat_name = 'fac_mat_var'
     fac_matrix_make(mag_var_name='bvec_gse_dwn', other_dim='Xgse', 
                              newname=fac_mat_name) # Creating FAC matrix
-    jvec_fac = jvec.jvec_to_fac(jvec_gse, fac_mat_name)
+
+    jvec_fac = jvec.jvec_to_fac(jvec_gse, fac_mat_name)       
 
     # Rotate to LMN coordinates
     lmn_mat_name = 'lmn_mat_var'
