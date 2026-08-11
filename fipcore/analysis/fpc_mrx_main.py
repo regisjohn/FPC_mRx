@@ -430,10 +430,10 @@ def fpc_mrx_jvec(trange, species='e', probe='1', data_rate='brst', bin_width_fra
                 level=level)
 
     # Read in magnetic field and electron bulf flow data
-    t0 = mms.fpi(trange= trange, probe=probe, data_rate=data_rate, level=level,
+    mms.fpi(trange= trange, probe=probe, data_rate=data_rate, level=level,
     datatype=['des-moms'], time_clip=True, varnames=f'mms{probe}_des_bulkv_gse_brst', 
     get_support_data=True, no_update=no_update)
-    t1 = mms.fgm(trange=trange, probe=probe, data_rate=data_rate, level=level,
+    mms.fgm(trange=trange, probe=probe, data_rate=data_rate, level=level,
         varnames=f'mms{probe}_fgm_b_gse_brst_l2', time_clip=True, 
         get_support_data=True, no_update=no_update)
 
