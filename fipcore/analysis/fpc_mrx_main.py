@@ -320,7 +320,7 @@ def fpc_mrx_fold(trange, species='e', probe='1', data_rate='brst',
     bin_width_frac=0.25, coord_type="fac", subtract_f0=False):
     """
     Computes folded FPC (Field Particle Correlation) data for a given time range
-    and species.
+    and species (currently FAC only).
 
     Parameters:
     - trange (list of str): [start time, end time] in the format:
@@ -463,13 +463,13 @@ def fpc_mrx_jvec(trange, species='e', probe='1', data_rate='brst', bin_width_fra
     # Save to .h5 file
     dat_grps = {
         "gse": {
-            "jvec_gse": jvec_gse_np
+            "jvec": jvec_gse_np
         },
         "fac": {
-            "jvec_fac": jvec_fac_np
+            "jvec": jvec_fac_np
         },
         "lmn": {
-            "jvec_lmn": jvec_lmn_np
+            "jvec": jvec_lmn_np
         }
     }
 
@@ -534,13 +534,13 @@ def fpc_mrx_jdotE(trange, species='e', probe='1', data_rate='brst',
     # Saving to .h5 file
     dat_grps = {
         "gse": {
-            "jdotE_gse": jdotE_gse
+            "jdotE": jdotE_gse
         },
         "fac": {
-            "jdotE_fac": jdotE_fac
+            "jdotE": jdotE_fac
         },
         "lmn": {
-            "jdotE_lmn": jdotE_lmn
+            "jdotE": jdotE_lmn
         }
     }
     iout.h5sav(hfile, dat_grps)
