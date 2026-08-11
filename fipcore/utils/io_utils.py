@@ -60,7 +60,7 @@ def h5sav(hfile, groups_dict, units_override=None):
     Saves data to an .h5 file and overwrites existing datasets.
 
     Parameters:
-    href (str): Path to the HDF5 file to be written.
+    hfile (str): Path to the HDF5 file to be written.
     groups_dict (dict): Dictionary where the keys are group names and the values 
         are inner dictionary containing the data to be written.
     units_override (dict, optional): A dictionary specifying variable names as 
@@ -87,8 +87,7 @@ def h5sav(hfile, groups_dict, units_override=None):
 
                 # Create dataset and assign unit attribute if key matches map
                 dset = grp.create_dataset(key, data=data)
-                if key in active_units:
-                    dset.attrs['units'] = active_units[key]
+                dset.attrs['units'] = active_units.get(key, "N/A")
 
     # --- Verification printout ---
     with h5py.File(hfile, "r") as f: 
