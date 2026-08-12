@@ -17,7 +17,7 @@ import numpy as np
 import os
 from scipy.constants import elementary_charge as q_e
 from pyspedas.projects import mms
-from pyspedas import get_data, tplot_rename, tvector_rotate, fac_matrix_make
+from pyspedas import get_data, tplot_rename, tvector_rotate, fac_matrix_make, tplot_save
 import h5py
 
 import fipcore.analysis.vel_proc as vel
@@ -465,9 +465,9 @@ def fpc_mrx_plasma_params(trange, probe='1', data_rate='brst', level='l2', speci
     # Matching vars to DES cadence of 30 ms
     hutil.downsample_cad('bvec_gse', 'bulk_ve_gse', trange=trange, newname='bvec_gse_dwn')
     hutil.upsample_cad('energy_i', 'energy_e', newname='energy_i_up')
-    hutil.upsample_cad('den_i', 'energy_e', newname='den_i_up')
-    hutil.upsample_cad('ti_para', 'energy_e', newname='ti_para_up')
-    hutil.upsample_cad('ti_perp', 'energy_e', newname='ti_perp_up')
+    hutil.upsample_cad('den_i', 'bulk_ve_gse', newname='den_i_up')
+    hutil.upsample_cad('ti_para', 'bulk_ve_gse', newname='ti_para_up')
+    hutil.upsample_cad('ti_perp', 'bulk_ve_gse', newname='ti_perp_up')
     hutil.upsample_cad('bulk_vi_gse', 'bulk_ve_gse', newname='bulk_vi_gse_up')
 
     # Extract the numpy arrays from the tplot vars
@@ -484,7 +484,6 @@ def fpc_mrx_plasma_params(trange, probe='1', data_rate='brst', level='l2', speci
     print(bvec_gse.shape, bmag.shape)
 
     # Data path setup
-    # project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     project_root= os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     data_dir = os.path.join(project_root, "data")
     type_tag = 'df' if subtract_f0 else 'f'
@@ -575,5 +574,9 @@ def fpc_mrx_plasma_params(trange, probe='1', data_rate='brst', level='l2', speci
     iout.h5sav(hfile, dat_grps)
 
     print(f"Data saved to file: {hfile}")
+
+    # Create a new tplot file to save the energy data.
+    tplot_file = hfile.replace('.h5', '.pyspd')
+    tplot_save(['energy_e', 'energy_i_up'], filename=tplot_file)
     
     return hfile
