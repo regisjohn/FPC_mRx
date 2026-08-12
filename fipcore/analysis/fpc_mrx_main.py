@@ -402,7 +402,7 @@ def fpc_mrx_fold(trange, species='e', probe='1', data_rate='brst',
 
 
 def fpc_mrx_plasma_params(trange, probe='1', data_rate='brst', level='l2', species='e', 
-            bg_ratio=0.5, bin_width_frac=0.25, subtract_f0=False, get_support_data=True, 
+            bg_ratio=None, bin_width_frac=0.25, subtract_f0=False, get_support_data=True, 
             no_update=True):
     """
     Master function to compute ancillary plasma parameters (density, temperature, bulk flow,
@@ -415,7 +415,7 @@ def fpc_mrx_plasma_params(trange, probe='1', data_rate='brst', level='l2', speci
     - data_rate (str): Data rate. Default is 'brst'.
     - level (str): Level of the data. Default is 'l2'.
     - species (str): Species of particle to analyze. Default is 'e'. 
-    - bg_ratio (float): Guide Field strength, default is 0.5.
+    - bg_ratio (float): Guide Field strength, default is None.
     - bin_width_frac (float): Fraction of the thermal velocity used to 
         determine the bin width, default is 0.25.
     - subtract_f0 (bool): if True, use the df suffix in the filename. Default is False.
@@ -481,10 +481,11 @@ def fpc_mrx_plasma_params(trange, probe='1', data_rate='brst', level='l2', speci
     _, bulk_vi_gse = get_data('bulk_vi_gse_up')
     _, bvec_gse = get_data('bvec_gse_dwn')
     bmag = bvec_gse[:,3]
+    print(bvec_gse.shape, bmag.shape)
 
     # Data path setup
     # project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    project_root= ".."
+    project_root= os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     data_dir = os.path.join(project_root, "data")
     type_tag = 'df' if subtract_f0 else 'f'
     hfile_pref = f'mms{probe}_{data_rate}_{type_tag}_{species}_{bin_width_frac:.2f}'
