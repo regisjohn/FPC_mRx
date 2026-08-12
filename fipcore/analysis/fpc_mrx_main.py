@@ -464,7 +464,7 @@ def fpc_mrx_plasma_params(trange, probe='1', data_rate='brst', level='l2', speci
 
     # Matching vars to DES cadence of 30 ms
     hutil.downsample_cad('bvec_gse', 'bulk_ve_gse', trange=trange, newname='bvec_gse_dwn')
-    hutil.upsample_cad('energy_i', 'energy_e', newname='energy_i_up')
+    # hutil.upsample_cad('energy_i', 'energy_e', newname='energy_i_up')
     hutil.upsample_cad('den_i', 'bulk_ve_gse', newname='den_i_up')
     hutil.upsample_cad('ti_para', 'bulk_ve_gse', newname='ti_para_up')
     hutil.upsample_cad('ti_perp', 'bulk_ve_gse', newname='ti_perp_up')
@@ -577,6 +577,7 @@ def fpc_mrx_plasma_params(trange, probe='1', data_rate='brst', level='l2', speci
 
     # Create a new tplot file to save the energy data.
     tplot_file = hfile.replace('.h5', '.pyspd')
-    tplot_save(['energy_e', 'energy_i_up'], filename=tplot_file)
+    tplot_save(['energy_e', 'energy_i'], filename=tplot_file)
+    print(f'Energy spectra data saved to file: {tplot_file}')
     
-    return hfile
+    return hfile, tplot_file
