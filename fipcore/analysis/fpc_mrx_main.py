@@ -17,7 +17,7 @@ import numpy as np
 import os
 from scipy.constants import elementary_charge as q_e
 from pyspedas.projects import mms
-from pyspedas import get_data, tplot_rename, tvector_rotate, fac_matrix_make, tplot_save
+from pyspedas import get_data, tplot_rename, tvector_rotate, fac_matrix_make, tplot_save, del_data
 import h5py
 
 import fipcore.analysis.vel_proc as vel
@@ -63,6 +63,9 @@ def fpc_mrx_main(trange, species='e', vth_lim=3.5, bin_width_frac=0.25, mean_phi
     Returns:
     - hfile (str): Full path of the .h5 file containing the results of the analysis.
     """
+    # --- Clearing tplot variable namespace ---
+    del_data('*')
+
     # --- MMS Data Loading --- 
     # Read in FPI data
     fpi_vars = mms.fpi(trange= trange, probe=probe, data_rate=data_rate, level=level,
@@ -336,6 +339,8 @@ def fpc_mrx_fold(trange, species='e', probe='1', data_rate='brst',
     - hfile (str): Full path of the .h5 file containing the results of the 
         folded analysis.
     """
+    # --- Clearing tplot variable namespace ---
+    del_data('*')
 
     # Data path setup
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -427,7 +432,8 @@ def fpc_mrx_plasma_params(trange, probe='1', data_rate='brst', level='l2', speci
      - hfile (str): Full path of the .h5 file containing computed plasma 
         parameters for the specified time range.
     """
-    
+    # --- Clearing tplot variable namespace ---
+    del_data('*')
 
     # --- MMS Data Loading --- 
     # Read in FPI Data
@@ -460,10 +466,10 @@ def fpc_mrx_plasma_params(trange, probe='1', data_rate='brst', level='l2', speci
     tplot_rename(f'mms{probe}_dis_tempperp_brst', 'ti_perp')
     tplot_rename(f'mms{probe}_des_bulkv_gse_brst', 'bulk_ve_gse')
     tplot_rename(f'mms{probe}_dis_bulkv_gse_brst', 'bulk_vi_gse')
-    tplot_rename(f'mms{probe}_fgm_b_gse_brst_l2', 'bvec_gse')
+    tplot_rename(f'mms{probe}_fgm_b_gse_brst_l2', 'bvectot_gse')
 
     # Matching vars to DES cadence of 30 ms
-    hutil.downsample_cad('bvec_gse', 'bulk_ve_gse', trange=trange, newname='bvec_gse_dwn')
+    hutil.downsample_cad('bvectot_gse', 'bulk_ve_gse', trange=trange, newname='bvectot_gse_dwn')
     # hutil.upsample_cad('energy_i', 'energy_e', newname='energy_i_up')
     hutil.upsample_cad('den_i', 'bulk_ve_gse', newname='den_i_up')
     hutil.upsample_cad('ti_para', 'bulk_ve_gse', newname='ti_para_up')
@@ -479,9 +485,8 @@ def fpc_mrx_plasma_params(trange, probe='1', data_rate='brst', level='l2', speci
     _, ti_perp = get_data('ti_perp_up')
     ntime_e, bulk_ve_gse = get_data('bulk_ve_gse')
     _, bulk_vi_gse = get_data('bulk_vi_gse_up')
-    _, bvec_gse = get_data('bvec_gse_dwn')
-    bmag = bvec_gse[:,3]
-    print(bvec_gse.shape, bmag.shape)
+    _, bvectot_gse = get_data('bvectot_gse_dwn')
+    bmag = bvectot_gse[:,3]
 
     # Data path setup
     project_root= os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
