@@ -106,6 +106,9 @@ def fpc_mrx_main(trange, species='e', vth_lim=3.5, bin_width_frac=0.25, mean_phi
 
     print("Loaded MMS data!")
 
+    # Extract time array from bulk flow of electrons measured by DES
+    time, _ = get_data('bulk_ve_gse') 
+    
     # Downsampling to DES cadence of 30 ms
     hutil.downsample_cad('scpot', 'bulk_ve_gse', trange, newname='scpot_dwn')
     hutil.downsample_cad('bvec_gse', 'bulk_ve_gse', trange, newname='bvec_gse_dwn')
@@ -133,7 +136,7 @@ def fpc_mrx_main(trange, species='e', vth_lim=3.5, bin_width_frac=0.25, mean_phi
     # --- Rotate velocity bins into FAC Coordinates ---
     fac_matrix_make(mag_var_name='bvec_gse_dwn', other_dim='Xgse', 
                              newname=fac_mat_name) # Creating FAC matrix
-    time, fac_matrix  = get_data(fac_mat_name)
+    _, fac_matrix  = get_data(fac_mat_name)
 
     vv_fac = vel.vv_to_fac(vv_recx, fac_matrix) # Shift into FAC coordinates  
 
