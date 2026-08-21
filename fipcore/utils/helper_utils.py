@@ -128,23 +128,32 @@ def is_interleaved(arr, atol=1e-6):
     return not np.allclose(arr, test_arr, atol)  # 1 if interleaved, otherwise 0
 
 
-def bl_recx_idx(bvec_lmn):
+def bl_recx_idx(bvec_lmn, t=None):
     """
     Finds the time index of a reconnection event by comparing the midpoint or 
     max gradient of the reconnecting magnetic field B_L.
 
     Parameters
     ----------
-    bvec_lmn : str
-        Name of the magnetic field tplot variable.
+    bvec_lmn (str or numpy array): Magnetic field data.
+    t (numpy array): Time array required when bvec_lmn is provided as a 
+        NumPy array. Optional & ignored when a tplot variable name is supplied.
+
 
     Returns
     -------
     idx_grad : int
         The time index of the maximum gradient of the magnetic field.
     """
-    # Load magnetic field data
-    t, blmn_arr = get_data(bvec_lmn)
+    if isinstance(bvec_lmn, str):
+        # Load magnetic field data
+        t, blmn_arr = get_data(bvec_lmn)
+    else:
+        # If inputs are NumPy arrays, use them directly
+        if t is None:
+            raise ValueError("Time array 't' must be provided when using NumPy arrays.")
+        blmn_arr = bvec_lmn
+
     bl = blmn_arr[:, 0]
 
     # Midpoint method
