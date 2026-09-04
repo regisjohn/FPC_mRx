@@ -308,7 +308,7 @@ def slice3d_to_2d_fac(*args, **kwargs):
     )
 
 
-def global_vmin_vmax_vdf(*vdfs, lower=None, upper=None):
+def global_vmin_vmax_vdf(*vdfs, lower=None, upper=None, subtract_f0=False):
     """
     Compute the global minimum and maximum of a set of velocity distributions.
 
@@ -320,7 +320,11 @@ def global_vmin_vmax_vdf(*vdfs, lower=None, upper=None):
         The lower bound of the global minimum. Defaults to None.
     upper : float, optional
         The upper bound of the global maximum. Defaults to None.
-
+    If both `lower` and `upper` are provided, these values are returned 
+    immediately without further computation.
+    subtract_f0 : bool, optional
+        If True, the vdf is subtracted one, otherwise full vdf. Defaults to False.
+    
     Returns
     -------
     vmin : float
@@ -331,12 +335,16 @@ def global_vmin_vmax_vdf(*vdfs, lower=None, upper=None):
     # If both limits are provided by the user, skip calculation entirely
     if lower is not None and upper is not None:
         return lower, upper
-    
-    # Only calculate if necessary
-    C_list = [np.log10(np.where(v > 0, v, np.nan)) for v in vdfs]
-    
-    vmin = lower if lower is not None else np.nanmin(C_list)
-    vmax = upper if upper is not None else np.nanmax(C_list)
+
+    if subtract_f0:
+        # for subtracted vdf
+        max_abs = np.nanmax([np.nanmax(np.abs(a)) for a in vdfs])
+        vmin, vmax = -max_abs, max_abs
+    else:
+        # for full vdf
+        C_list = [np.log10(np.where(v > 0, v, np.nan)) for v in vdfs]
+        vmin = lower if lower is not None else np.nanmin(C_list)
+        vmax = upper if upper is not None else np.nanmax(C_list)
     
     return vmin, vmax
 

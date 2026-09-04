@@ -121,7 +121,7 @@ def imagecont_vdf_fpc(trange, species, bin_width_frac, time_index=0, probe='1',
             # Call rendering function
             fig, axes = imagecont_vdf_fpc_panel(vdf_2d_list, cx_2d_list, cy_2d_list, cz_2d_list, 
                         ax_pairs, axlabel_pairs, row_lbls, diag_lbls, dpi_val, 
-                        axis_fntsz, cbar_ht)
+                        axis_fntsz, cbar_ht, subtract_f0=True)
             
             # Title and Save
             suptitle = (f"{species_label} VDF and FPC components ({ct.upper()}) " 
@@ -143,7 +143,7 @@ def imagecont_vdf_fpc(trange, species, bin_width_frac, time_index=0, probe='1',
 
 def imagecont_vdf_fpc_panel(vdf_2d, cx_2d, cy_2d, cz_2d, ax_pairs, axlabels_pairs, 
                             row_labels, diag_labels, dpi_val=100, axis_fntsz=16, 
-                            cbar_ht=0.047):
+                            cbar_ht=0.047, subtract_f0=False):
     """
     Render helper function to the above imagecont_vdf_fpc_panel function which plots 
     a 4x3 panel of VDF and FPC components.
@@ -160,6 +160,8 @@ def imagecont_vdf_fpc_panel(vdf_2d, cx_2d, cy_2d, cz_2d, ax_pairs, axlabels_pair
     - dpi_val (int): The DPI for the figure.
     - axis_fntsz (int): The fontsize for the axis labels.
     - cbar_ht (float): The height of the colorbars.
+    - subtract_f0 (bool, optional): Whether the vdf is subtracted one or full one, 
+        default is False.
 
     Returns:
     - fig (matplotlib.figure.Figure): The figure object.
@@ -168,11 +170,12 @@ def imagecont_vdf_fpc_panel(vdf_2d, cx_2d, cy_2d, cz_2d, ax_pairs, axlabels_pair
 
     # --- Row 1: VDF top row ---
     for i in range(3):
-        vmin, vmax = global_vmin_vmax_vdf(vdf_2d[i])
+        vmin, vmax = global_vmin_vmax_vdf(vdf_2d[i], subtract_f0=subtract_f0)
         ax1, ax2 = ax_pairs[i]
         _, ylabel = axlabels_pairs[i]
         im1, _ = imagecont_vdf(ax1, ax2, vdf_2d[i], xlabel=None, ylabel=ylabel, 
-                           ax=axes[0,i], vmin=vmin, vmax=vmax, axis_fntsz=axis_fntsz)
+                           ax=axes[0,i], vmin=vmin, vmax=vmax, axis_fntsz=axis_fntsz,
+                           subtract_f0=subtract_f0)
         height, width = len(ax2), len(ax1)
         cbar = fig.colorbar(im1, ax=axes[0,i], fraction=cbar_ht*height/width, pad=0.08)
         cbar.set_label(r"[m$^{-3}$]")

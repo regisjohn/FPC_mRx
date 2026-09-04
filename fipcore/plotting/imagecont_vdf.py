@@ -19,9 +19,10 @@ from pyspedas import time_string
 from fipcore.utils.helper_utils import slice3d_to_2d_fac, global_vmin_vmax_vdf, slice3d_to_2d
 
 def imagecont_vdf(xc, yc, vdf_2d, ax = None, vmin=None, vmax=None, title="", xlabel='X',
-                    ylabel='Y', xlim=3, ylim=3, cmap="jet", contour_levels=20, 
+                    ylabel='Y', xlim=3, ylim=3, cmap=None, contour_levels=20, 
                     title_fntsz = 16, axis_fntsz = 12, tick_fntsz = 12, 
-                    cbar_fntsz = 10, alpha_val = 1.0, dpi_val=100):
+                    cbar_fntsz = 10, alpha_val = 1.0, dpi_val=100, 
+                    subtract_f0=False):
     """
     Image and Contour Plots of VDF.
 
@@ -38,7 +39,8 @@ def imagecont_vdf(xc, yc, vdf_2d, ax = None, vmin=None, vmax=None, title="", xla
     - ylabel (str, optional): The label of the y-axis. Default is "Y".
     - xlim (float, optional): The x-axis limit. Default is 3.
     - ylim (float, optional): The y-axis limit. Default is 3.
-    - cmap (str, optional): The colormap to use for the heatmap. Default is "jet".
+    - cmap (str, optional): The colormap to use, default is None. If none is 
+        provided it will use 'jet' for full vdf and 'seismic' for subtracted vdf.
     - contour_levels (int, optional): The number of contour levels. Default is 20.
     - title_fntsz (int, optional): The font size of the title. Default is 16.
     - axis_fntsz (int, optional): The font size of the axis labels. Default is 12.
@@ -46,6 +48,8 @@ def imagecont_vdf(xc, yc, vdf_2d, ax = None, vmin=None, vmax=None, title="", xla
     - cbar_fntsz (int, optional): The font size of the colorbar ticks. Default is 10.
     - alpha_val (float, optional): The alpha value of the contours. Default is 1.0.
     - dpi_val (int, optional): The dots per inch of the figure, default is 100.
+    - subtract_f0 (bool, optional): Whether the vdf is subtracted one or full one, 
+        default is False.
 
     Returns:
     - im (matplotlib.image.AxesImage): The image object.
@@ -58,7 +62,16 @@ def imagecont_vdf(xc, yc, vdf_2d, ax = None, vmin=None, vmax=None, title="", xla
     else:
         standalone = False
 
-    C = np.log10(np.where(vdf_2d > 0, vdf_2d, np.nan))
+    if subtract_f0:
+        # Linear scale for delta vdf
+        C = vdf_2d
+        if cmap is None:
+            cmap = "seismic"
+    else:
+        # Log scale for full vdf
+        C = np.log10(np.where(vdf_2d > 0, vdf_2d, np.nan))
+        if cmap is None:
+            cmap = "jet"
 
     im = ax.imshow(
         C.T,
