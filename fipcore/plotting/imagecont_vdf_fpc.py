@@ -5,6 +5,7 @@
 Functions:
 - imagecont_vdf_fpc: Generate 12 panel subplots of VDF and FPC components.
 - imagecont_vdf_fpc_panel: Helper function for imagecont_vdf_fpc.
+- imagecont_vdf_fpcfold: Generate 12 panel subplots of VDF and folded FPC in FAC
 
 Author: Regis John
 Created: 2026-03-31
