@@ -102,16 +102,23 @@ def rotate_to_fac(tplot_var, fac_mat_var):
     Rotate a tplot variable using a given FAC matrix.
 
     Parameters:
-    - tplot_var (str): Name of the tplot variable to be rotated.
-    - fac_mat_var (str): Name of the tplot variable containing the FAC matrix.
+    - tplot_var (str or numpy array): Name of the tplot variable or numpy array to be rotated.
+    - fac_mat_var (str or numpy array): Name of the tplot variable or numpy array containing the FAC matrix.
 
     Returns:
-    - times (np.ndarray): Time array of the input data.
+    - times (np.ndarray): Time array of the input data or None if NumPy arrays provided.
     - tdata_rot (np.ndarray): Array of rotated data.
     """
-    # Extract Data from tplot variables
-    times, tdata = get_data(tplot_var)
-    _, fac_matrix = get_data(fac_mat_var)
+    if isinstance(tplot_var, str):
+        # Extract Data from tplot variables
+        times, tdata = get_data(tplot_var)
+        _, fac_matrix = get_data(fac_mat_var)
+    else:
+        # If inputs are NumPy arrays, use them directly
+        times = None
+        print('Input data are Numpy Arrays, no time array will be returned!')
+        tdata = tplot_var
+        fac_matrix = fac_mat_var 
 
     tdata_rot = np.einsum('tij, tj -> ti', fac_matrix, tdata)
 
@@ -123,16 +130,23 @@ def rotate_to_lmn(tplot_var, lmn_mat_var):
     Rotate a tplot variable using a given LMN matrix.
 
     Parameters:
-    - tplot_var (str): Name of the tplot variable to be rotated.
-    - lmn_mat_var (str): Name of the tplot variable containing the LMN matrix.
+    - tplot_var (str or numpy array): Name of the tplot variable or numpy array to be rotated.
+    - lmn_mat_var (str or numpy array): Name of the tplot variable or numpy array containing the LMN matrix.
 
     Returns:
-    - times (np.ndarray): Time array of the input data.
+    - times (np.ndarray): Time array of the input data or None if NumPy arrays provided.
     - tdata_rot (np.ndarray): Array of rotated data.
     """
-    # Extract data
-    times, tdata = get_data(tplot_var)
-    _, lmn_matrix = get_data(lmn_mat_var)
+    if isinstance(tplot_var, str):
+        # Extract Data from tplot variables
+        times, tdata = get_data(tplot_var)
+        _, lmn_matrix = get_data(lmn_mat_var)
+    else:
+        # If inputs are NumPy arrays, use them directly
+        times = None
+        print('Input data are Numpy Arrays, no time array will be returned!')
+        tdata = tplot_var
+        lmn_matrix = lmn_mat_var 
 
     # Handle (1,3,3) vs (3,3)
     if lmn_matrix.ndim == 3:

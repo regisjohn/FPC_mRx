@@ -6,10 +6,15 @@ fipcore.egg-info/
 
 # Any .h5 data file
 *.h5
+# Any .eps file
+*.eps
 
 # Python Bytecode
 **/__pycache__/
 *.pyc
+
+# MacOS Finder metadata
+.DS_Store
 
 # Compressed archives
 *.tar

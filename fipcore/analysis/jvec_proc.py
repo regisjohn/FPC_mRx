@@ -22,7 +22,8 @@ from fipcore.utils.helper_utils import upsample_cad
 from fipcore.utils.coord_utils import rotate_to_fac, rotate_to_lmn
 
 
-def compute_jvec(trange, probe='1', data_rate='brst', level='l2', newname=None):
+def compute_jvec(trange, probe='1', data_rate='brst', level='l2', newname=None, 
+        no_update=True):
     """
     Compute J vector from MMS data.
 
@@ -34,6 +35,8 @@ def compute_jvec(trange, probe='1', data_rate='brst', level='l2', newname=None):
     - level (str): Level of the data. Default is 'l2'.
     - newname (str): The name of the output tplot variable. If None, the default
          name is "jvec_gse"
+    - no_update (bool): if True, do not download new data. Default is True. Turn 
+        it to False to download new data if it is not available locally.
 
     Returns:
     - out_name (str): The name of the output tplot variable.
@@ -41,14 +44,14 @@ def compute_jvec(trange, probe='1', data_rate='brst', level='l2', newname=None):
     # Loading data
     dat = mms.fpi(trange=trange, probe=probe, data_rate=data_rate, level=level, 
                             datatype=['des-moms', 'dis-moms'], time_clip=True,
-                            varnames=['mms1_des_numberdensity_brst',
-                                       'mms1_dis_bulkv_gse_brst',
-                                       'mms1_des_bulkv_gse_brst'], no_update=True)
+                            varnames=[f'mms{probe}_des_numberdensity_brst',
+                                f'mms{probe}_dis_bulkv_gse_brst',
+                                f'mms{probe}_des_bulkv_gse_brst'], no_update=no_update)
     
     # Renaming the tplot vars
-    tplot_rename('mms1_dis_bulkv_gse_brst', 'bulk_vi_gse')
-    tplot_rename('mms1_des_bulkv_gse_brst', 'bulk_ve_gse')
-    tplot_rename('mms1_des_numberdensity_brst', 'den_e')
+    tplot_rename(f'mms{probe}_dis_bulkv_gse_brst', 'bulk_vi_gse')
+    tplot_rename(f'mms{probe}_des_bulkv_gse_brst', 'bulk_ve_gse')
+    tplot_rename(f'mms{probe}_des_numberdensity_brst', 'den_e')
 
     # Setting everything to DES cadence
     upsample_cad('bulk_vi_gse', 'bulk_ve_gse', newname='bulk_vi_gse_up')
@@ -57,6 +60,8 @@ def compute_jvec(trange, probe='1', data_rate='brst', level='l2', newname=None):
     _, den_e = get_data('den_e')
     times, bulk_ve = get_data('bulk_ve_gse')
     _, bulk_vi = get_data('bulk_vi_gse_up')
+
+    print(den_e.shape, bulk_ve.shape, bulk_vi.shape)
     
     # Computing jvec
     jvec_gse = den_e.reshape(-1, 1) * q_e * (bulk_vi - bulk_ve)*1e18 

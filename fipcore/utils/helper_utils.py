@@ -23,7 +23,11 @@ Created: 2026-03-25
 """
 
 import numpy as np
+<<<<<<< HEAD
 from pyspedas import tres, avg_data, tinterpol, get_data, time_string
+=======
+from pyspedas import avg_data, tinterpol, get_data, time_string
+>>>>>>> dev
 from scipy.constants import c, physical_constants, e, mu_0
 import h5py
 import os
@@ -33,7 +37,8 @@ from .io_utils import mms_name_make
 
 def downsample_cad(tplot_var, ref_tplot_var, trange, newname=None, **kwargs):
     """
-    Downsample a tplot variable to match the cadence of a reference tplot variable.
+    Downsample a tplot variable to match the cadence of a reference tplot 
+    variable using width-based boxcar averaging.
 
     Parameters
     ----------
@@ -55,13 +60,21 @@ def downsample_cad(tplot_var, ref_tplot_var, trange, newname=None, **kwargs):
         Name of the downsampled tplot variable.
     """
     # Get target cadence
-    des_cadence = tres(ref_tplot_var)
+    t_ref, _ = get_data(ref_tplot_var)
+    des_cadence = len(t_ref)
+
+    # Input variable cadence
+    t_in, _ = get_data(tplot_var)
+    in_cadence = len(t_in)
+
+    # Number of values for the averaging window.
+    n_avg = in_cadence/des_cadence
 
     # Name of downsampled tplot variable
     outname = newname if newname else f'{tplot_var}_dwnsmple'
 
     # Downsample tplot variable
-    return avg_data(tplot_var, trange=trange, res=des_cadence,
+    return avg_data(tplot_var, trange=trange, width=n_avg,
                              newname=outname, **kwargs)
 
 
@@ -119,23 +132,32 @@ def is_interleaved(arr, atol=1e-6):
     return not np.allclose(arr, test_arr, atol)  # 1 if interleaved, otherwise 0
 
 
-def bl_recx_idx(bvec_lmn):
+def bl_recx_idx(bvec_lmn, t=None):
     """
     Finds the time index of a reconnection event by comparing the midpoint or 
     max gradient of the reconnecting magnetic field B_L.
 
     Parameters
     ----------
-    bvec_lmn : str
-        Name of the magnetic field tplot variable.
+    bvec_lmn (str or numpy array): Magnetic field data.
+    t (numpy array): Time array required when bvec_lmn is provided as a 
+        NumPy array. Optional & ignored when a tplot variable name is supplied.
+
 
     Returns
     -------
     idx_grad : int
         The time index of the maximum gradient of the magnetic field.
     """
-    # Load magnetic field data
-    t, blmn_arr = get_data(bvec_lmn)
+    if isinstance(bvec_lmn, str):
+        # Load magnetic field data
+        t, blmn_arr = get_data(bvec_lmn)
+    else:
+        # If inputs are NumPy arrays, use them directly
+        if t is None:
+            raise ValueError("Time array 't' must be provided when using NumPy arrays.")
+        blmn_arr = bvec_lmn
+
     bl = blmn_arr[:, 0]
 
     # Midpoint method
@@ -290,7 +312,7 @@ def slice3d_to_2d_fac(*args, **kwargs):
     )
 
 
-def global_vmin_vmax_vdf(*vdfs, lower=None, upper=None):
+def global_vmin_vmax_vdf(*vdfs, lower=None, upper=None, subtract_f0=False):
     """
     Compute the global minimum and maximum of a set of velocity distributions.
 
@@ -302,7 +324,11 @@ def global_vmin_vmax_vdf(*vdfs, lower=None, upper=None):
         The lower bound of the global minimum. Defaults to None.
     upper : float, optional
         The upper bound of the global maximum. Defaults to None.
-
+    If both `lower` and `upper` are provided, these values are returned 
+    immediately without further computation.
+    subtract_f0 : bool, optional
+        If True, the vdf is subtracted one, otherwise full vdf. Defaults to False.
+    
     Returns
     -------
     vmin : float
@@ -313,12 +339,16 @@ def global_vmin_vmax_vdf(*vdfs, lower=None, upper=None):
     # If both limits are provided by the user, skip calculation entirely
     if lower is not None and upper is not None:
         return lower, upper
-    
-    # Only calculate if necessary
-    C_list = [np.log10(np.where(v > 0, v, np.nan)) for v in vdfs]
-    
-    vmin = lower if lower is not None else np.nanmin(C_list)
-    vmax = upper if upper is not None else np.nanmax(C_list)
+
+    if subtract_f0:
+        # for subtracted vdf
+        max_abs = np.nanmax([np.nanmax(np.abs(a)) for a in vdfs])
+        vmin, vmax = -max_abs, max_abs
+    else:
+        # for full vdf
+        C_list = [np.log10(np.where(v > 0, v, np.nan)) for v in vdfs]
+        vmin = lower if lower is not None else np.nanmin(C_list)
+        vmax = upper if upper is not None else np.nanmax(C_list)
     
     return vmin, vmax
 
