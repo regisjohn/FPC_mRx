@@ -13,6 +13,9 @@ fipcore.egg-info/
 **/__pycache__/
 *.pyc
 
+# MacOS Finder metadata
+.DS_Store
+
 # Compressed archives
 *.tar
 *.tar.gz
