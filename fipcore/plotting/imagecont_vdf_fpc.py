@@ -61,7 +61,12 @@ def imagecont_vdf_fpc(trange, species, bin_width_frac, time_index=0, probe='1',
     # Data path setup
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     data_dir = os.path.join(project_root, "data")
-    type_tag = 'df' if subtract_f0 else 'f'
+    if subtract_f0: # subtract_f0 file tag and top row label
+        type_tag = 'df'
+        top_row_lbl = rf"$\delta f_{{{species}}}$"
+    else:
+        type_tag = 'f'
+        top_row_lbl = rf"$\mathrm{{log}}(f_{{{species}}})$"
     hfile_pref = f'mms{probe}_{data_rate}_{type_tag}_{species}_{bin_width_frac:.2f}'
     hfile = os.path.join(data_dir, mms_name_make(hfile_pref, trange[0], trange[1]))
 
@@ -84,14 +89,12 @@ def imagecont_vdf_fpc(trange, species, bin_width_frac, time_index=0, probe='1',
                 ax_lbls = [r"$v_{\perp 1}/v_{te}$", r"$v_{\perp 2}/v_{te}$", 
                            r"$v_{\parallel}/v_{te}$"]
                 subs = [r"{\perp 1}", r"{\perp 2}", r"{\parallel}"]
-                row_lbls = [rf"$\mathrm{{log}}(f_{{{species}}})$", 
-                    r"$C_{\mathrm{E}\perp 1}$", r"$C_{\mathrm{E}\perp 2}$", 
-                    r"$C_{\mathrm{E}\parallel}$"]
+                row_lbls = [top_row_lbl, r"$C_{\mathrm{E}\perp 1}$", 
+                    r"$C_{\mathrm{E}\perp 2}$", r"$C_{\mathrm{E}\parallel}$"]
             else:
                 ax_lbls = [r"$v_L$", r"$v_M$", r"$v_N$"]
                 subs = ["L", "M", "N"]
-                row_lbls = [rf"$\mathrm{{log}}(f_{{{species}}})$", 
-                    r"$C_{\mathrm{E}_L}$", r"$C_{\mathrm{E}_M}$", 
+                row_lbls = [top_row_lbl, r"$C_{\mathrm{E}_L}$", r"$C_{\mathrm{E}_M}$", 
                     r"$C_{\mathrm{E}_N}$"]
 
             # Data Loading
@@ -121,7 +124,7 @@ def imagecont_vdf_fpc(trange, species, bin_width_frac, time_index=0, probe='1',
             # Call rendering function
             fig, axes = imagecont_vdf_fpc_panel(vdf_2d_list, cx_2d_list, cy_2d_list, cz_2d_list, 
                         ax_pairs, axlabel_pairs, row_lbls, diag_lbls, dpi_val, 
-                        axis_fntsz, cbar_ht, subtract_f0=True)
+                        axis_fntsz, cbar_ht, subtract_f0=subtract_f0)
             
             # Title and Save
             suptitle = (f"{species_label} VDF and FPC components ({ct.upper()}) " 
