@@ -22,8 +22,6 @@ def imagecont_fpc(xc, yc, c_2d, ax = None, vmin=None, vmax=None, title="", xlabe
                     ylabel='Y', xlim=3, ylim=3, cmap="seismic", contour_levels=20, 
                     title_fntsz = 16, axis_fntsz = 12, tick_fntsz = 12, 
                     cbar_fntsz = 10, alpha_val = 1.0, dpi_val=100):
-    
-    # Create axis if none provided
     """
     Image and Contour Plots of FPC.
 
@@ -53,6 +51,7 @@ def imagecont_fpc(xc, yc, c_2d, ax = None, vmin=None, vmax=None, title="", xlabe
     - im (matplotlib.image.AxesImage): The image object.
     - ax (matplotlib.axes.Axes): The axis object.
     """
+    # Create axis if none provided
     if ax is None:
         fig, ax = plt.subplots(figsize=(6,5), dpi=dpi_val)
         standalone = True
