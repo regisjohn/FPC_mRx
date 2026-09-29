@@ -1,19 +1,33 @@
 # Data
 data/
+pydata/
 
-# Editable Folder
+# Editable install metadata
 fipcore.egg-info/
 
-# Any .h5 data file
+# Generated data products
 *.h5
-# Any .eps file
-*.eps
+*.hdf5
+*.cdf
+*.npy
+*.npz
+*.pyspd
 
-# Python Bytecode
+# Generated figures and exports
+plots/
+*.png
+*.eps
+validation_checks/*.pdf
+
+# ...except images used as documentation
+!/FIPCORE FPC Analysis Flowchart-*.png
+!/scripts/Fig4_wilder2018_lmn_comparison.png
+
+# Python bytecode
 **/__pycache__/
 *.pyc
 
-# MacOS Finder metadata
+# macOS Finder metadata
 .DS_Store
 
 # Compressed archives
