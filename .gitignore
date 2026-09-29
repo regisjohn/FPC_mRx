@@ -21,7 +21,7 @@ validation_checks/*.pdf
 
 # ...except images used as documentation
 !/FIPCORE FPC Analysis Flowchart-*.png
-!/validation_checks/Fig4_wilder2018_lmn_comparison.png
+!/scripts/Fig4_wilder2018_lmn_comparison.png
 
 # Python bytecode
 **/__pycache__/
