@@ -134,9 +134,9 @@ def process_vdf(vdf_raw_var, vdf_err_var, dq_flags_var, vvol):
         both_zero = (vdf_rawi == 0) & (vdf_err == 0)
         counts[both_zero] = 0
 
-        # Replace 0-count or negative vdf with NaN
-        mask = (counts <= 0) | (vdf_rawi <= 0) | np.isnan(vdf_rawi)
-        vdf_rawi[mask] = np.nan
+        # Zero counts (or non-positive vdf) mean nothing was measured: f = 0, not missing
+        zero = (counts <= 0) | (vdf_rawi <= 0)
+        vdf_rawi[zero] = 0.0
 
 
     # vdf_rawi is (ntime, 16384), vvol is (16384, n_sweeps)
