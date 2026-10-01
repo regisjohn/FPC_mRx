@@ -125,7 +125,7 @@ def is_interleaved(arr, atol=1e-6):
     """
     arr0 = arr[0, :]  # Takes the first row (time t=0) with shape (32,) across all energy bins.
     test_arr = np.tile(arr0, (arr.shape[0], 1))  # Replicates arr0 vertically to arr.shape[0] creating (N, 32)
-    return not np.allclose(arr, test_arr, atol)  # 1 if interleaved, otherwise 0
+    return not np.allclose(arr, test_arr, atol=atol)  # 1 if interleaved, otherwise 0
 
 
 def bl_recx_idx(bvec_lmn, t=None):

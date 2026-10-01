@@ -46,7 +46,7 @@ def equilibrium_vdf(vv_fac, den, t_para, t_perp, species='e', v_flow=None):
     elif species.lower() == 'e':
         mc2_ev = physical_constants['electron mass energy equivalent in MeV'][0] * 1e6
     else:
-        raise ValuoeError("Species must be 'ion' or 'e'")
+        raise ValueError("Species must be 'ion' or 'e'")
 
     c_m_s = c   # Speed of light in m/s
     den_si = den * 1e6 # Convert density to m^-3

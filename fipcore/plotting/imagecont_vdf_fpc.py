@@ -36,7 +36,7 @@ def imagecont_vdf_fpc(trange, species, bin_width_frac, time_index=0, probe='1',
     Parameters:
     - trange (list of str): start time, end time] in the format:
             ['YYYY-MM-DD/hh:mm:ss','YYYY-MM-DD/hh:mm:ss'].
-    - species (str): species name ('e' or 'i').
+    - species (str): species name ('e' or 'ion').
     - bin_width_frac (float): bin width as a fraction of thermal velocity.
     - time_index (int): time index for the plot.
     - probe (str): Probe number to analyze. Default is '1'.
@@ -247,7 +247,7 @@ def imagecont_vdf_fpcfold(trange, species, bin_width_frac, time_index=0, probe='
     Parameters:
     - trange (list of str): start time, end time] in the format:
             ['YYYY-MM-DD/hh:mm:ss','YYYY-MM-DD/hh:mm:ss'].
-    - species (str): species name ('e' or 'i').
+    - species (str): species name ('e' or 'ion').
     - bin_width_frac (float): bin width as a fraction of thermal velocity.
     - time_index (int): time index for the plot.
     - probe (str): Probe number to analyze. Default is '1'.
