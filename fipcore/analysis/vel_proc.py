@@ -254,8 +254,11 @@ def vv_to_vmap(vv_coord, vth_mean, vth_lim=3.5, bin_width_frac=0.1):
     Parameters:
     - vv_coord: np.array of shape (3, nbin, npts); velocity vectors in a frame in km/s
     - vth_mean: float; mean thermal velocity for normalization in km/s
-    - vth_lim: float, optional; limit of normalized velocity space (default: 3.5)
-    - bin_width_frac: float, optional; fraction of v_range for bin width (default: 0.1)
+    - vth_lim: float, optional; limit of normalized velocity space (default: 3.5).
+        If 2*vth_lim/bin_width_frac is not a whole number, the grid extends
+        symmetrically up to half a bin beyond vth_lim so all bins are exactly
+        bin_width_frac wide.
+    - bin_width_frac: float, optional; bin width as a fraction of vth_mean (default: 0.1)
 
     Returns:
     - vmap: np.array of shape (3, nbin, npts); bin indices of velocity vectors in normalized space
@@ -269,13 +272,13 @@ def vv_to_vmap(vv_coord, vth_mean, vth_lim=3.5, bin_width_frac=0.1):
     vv_norm = vv_coord / vth_mean
 
     # Normalized limits and bin width
-    v_min = -vth_lim
-    v_max =  vth_lim
-    v_range = v_max - v_min
-
     dv = bin_width_frac
-    # n_vbins = int(round(v_range / dv))
-    n_vbins = int(np.ceil(v_range / dv))
+    n_vbins = int(np.ceil(2 * vth_lim / dv))
+
+    # Symmetric limits holding exactly n_vbins bins of width dv:
+    # +/- vth_lim when 2*vth_lim/dv is whole (0.25 -> +/-3.5), else slightly wider (0.30 -> +/-3.6)
+    v_max = 0.5 * n_vbins * dv
+    v_min = -v_max
 
     # Normalized edges and centers
     edges_norm = np.linspace(v_min, v_max, n_vbins + 1)
