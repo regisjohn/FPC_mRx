@@ -393,7 +393,7 @@ def fpc_mrx_fold(trange, species='e', probe='1', data_rate='brst',
         # Fold Cy(x,y) along +ve y-axis, flip the bottom and add to the top
         cy_folds[0, :, idx:, t]  = cy_2d_list[0][:, idx:]
         cy_folds[0, :, jdx:, t] += cy_2d_list[0][:, :idx][:, ::-1]
-        # Fold Cy(z,y) along +ve x-axis, flip the bottom and add to the top
+        # Fold Cy(z,y) along +ve y-axis, flip the bottom and add to the top
         cy_folds[1, :, idx:, t]  = cy_2d_list[2][:, idx:]
         cy_folds[1, :, jdx:, t] += cy_2d_list[2][:, :idx][:, ::-1]
 
