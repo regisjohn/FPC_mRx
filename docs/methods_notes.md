@@ -1,8 +1,10 @@
 # fipcore methods notes
 
-Notes for writing the methodology section. They describe what the code in `fipcore/` does as of commit `d895f12`. Nothing here is taken from the literature or from intent. Where the code is ambiguous, or its behaviour may not match what a paper would normally claim, the item is marked **⚠ Flag** and collected in [§11](#11-flags-and-open-questions).
+Notes for writing the methodology section. They describe what the code in `fipcore/` does as of commit `5955177`. Nothing here is taken from the literature or from intent. Items that need a decision or a sentence in the paper are labelled **(Fn)** and collected, with their status, in [§11](#11-review-items-and-status).
 
 Function references use the form `module.function`. All modules are under [`fipcore/`](../fipcore/).
+
+> **Note:** Commits `56c2d20` (zero-count bins) and `5955177` (bin edges) change the computed outputs. HDF5 files and figures made before them must be regenerated with `fpc_mrx_main` followed by `fpc_mrx_fold`. For Δ = 0.25 the bin-edge change alone makes no difference.
 
 ---
 
@@ -16,14 +18,14 @@ Function references use the form `module.function`. All modules are under [`fipc
 | Probes | MMS1–4, each processed independently | notebook |
 | Species | electrons (`'e'`) | notebook |
 | Data rate / level | `brst` / `l2` | default |
-| `bin_width_frac` | 0.25 (also run at 0.10, 0.20, 0.30, 0.40, 0.50 for the bin-width checks) | notebook |
+| `bin_width_frac` (Δ) | 0.25 (also run at 0.10, 0.20, 0.30, 0.40, 0.50 for the bin-width checks) | notebook |
 | `vth_lim` | 3.5 | default |
 | `mean_phi` | `False` (per-time azimuth angles) | default |
 | `subtract_f0` | run both `False` (full *f*) and `True` (δ*f*) | notebook |
 | `v_flow` | `None` | default |
 | `bg_ratio` | 0.5 (saved as metadata only, not used in any calculation) | notebook, `fpc_mrx_plasma_params` |
 
-In the saved MMS1 file this gives 133 time samples at 30 ms cadence, a 28×28×28 velocity grid, and $\langle v_{th,e}\rangle$ = 4441.8 km/s.
+For MMS1 this gives 133 time samples at 30 ms cadence, a 28×28×28 velocity grid, and $\langle v_{th,e}\rangle$ = 4441.8 km/s.
 
 ---
 
@@ -49,7 +51,7 @@ Every quantity is put on the DES burst time base, which is the timestamps of $\m
 - **Faster fields ($\mathbf{E}$, $\mathbf{B}$, $V_{sc}$) are boxcar-averaged** ([`utils/helper_utils.downsample_cad`](../fipcore/utils/helper_utils.py), which wraps pyspedas `avg_data`). The window width in *samples* is $N_{in}/N_{DES}$, the ratio of the number of points in the input series to the number of DES points over `trange`.
 - **Slower data ($\mathbf{V}_i$, 150 ms DIS cadence) is linearly interpolated** onto the DES timestamps (`helper_utils.upsample_cad`, which wraps pyspedas `tinterpol`).
 
-⚠ Flag (F1): `avg_data` puts its output on its own uniform grid, $t_k=t_{start}+(k+\tfrac12)\Delta t$, not on the DES timestamps. Downstream code then pairs the averaged fields with DES samples by array index, not by time. The alignment is presumably within one sample but is not enforced.
+**(F1)** `avg_data` lays its averaging bins out uniformly from `trange[0]`: $t_k = t_{start} + (k+\tfrac12)\Delta t$. The results are paired with DES samples by array index. For MMS1 both series have 133 samples, and the averaged timestamps differ from the DES timestamps by at most 12.4 ms, less than half a sample.
 
 ## 3. Velocity-space coordinates of each measurement
 
@@ -67,18 +69,18 @@ The speed of each energy channel is the non-relativistic
 $$
 v = c\sqrt{2\,\mathcal{E}_{corr}/(mc^2)} \quad \text{(km/s)}.
 $$
-⚠ Flag (F2): if $\mathcal{E}_{corr}<0$ (a channel below $eV_{sc}$), the square root gives NaN and that channel's measurements are silently dropped later. This didn't happen for the event (0 NaN velocities in the MMS1 file), but the code doesn't guard against it.
+**(F2)** A channel below $eV_{sc}$ would give $\mathcal{E}_{corr}<0$ and a NaN speed. This cannot happen for this event: the lowest DES channel is 10.96–12.41 eV and $V_{sc}$ is 3.3–4.1 V.
 
 ### 3.3 Velocity vectors (`vel_proc.vbin_to_vv`)
-Each of the 32 (φ) × 16 (θ) × 32 (energy) = 16384 bins becomes a velocity vector in the instrument frame (DBCS). The code treats that frame as GSE with no further rotation, because FPI L2 moments and pyspedas conventions do the same:
+Each of the 32 (φ) × 16 (θ) × 32 (energy) = 16384 bins becomes a velocity vector:
 $$
 \mathbf{v} = -\,v\,(\sin\theta\cos\phi,\ \sin\theta\sin\phi,\ \cos\theta).
 $$
 - The minus sign converts the detector look direction into the particle's direction of travel.
-- **Polar angles are hard-coded**: $\theta_k = 5.625^\circ + 11.25^\circ k$, for $k=0..15$. They are not read from the data file.
+- **Polar angles are fixed**: $\theta_k = 5.625^\circ + 11.25^\circ k$, for $k=0..15$. These are the values in the L2 `des_theta_brst` variable.
 - **Azimuth angles** $\phi$ are the per-sweep values from `des_phi_brst` (because `mean_phi=False`). With `mean_phi=True`, their time average would be used instead.
 
-⚠ Flag (F3): the code assumes DBCS ≈ GSE for the particle velocities; there is no explicit DBCS→GSE rotation. Confirm this approximation is acceptable and state it in the paper.
+**(F3)** The L2 angles are in the despun spacecraft frame (labelled `DBCS` in the CDF metadata). The resulting velocities are combined with GSE quantities ($\mathbf{U}$, $\mathbf{B}$, $\mathbf{E}$) without a further rotation. For this event the two frames differ by about 2.5–3.5°.
 
 ### 3.4 Phase-space volume of each instrument bin (`vel_proc.compute_vbin_vol`)
 $$
@@ -91,15 +93,15 @@ $$
 
 ## 4. Distribution-function processing ([`analysis/vdf_proc.process_vdf`](../fipcore/analysis/vdf_proc.py))
 
-1. **Bad distributions.** Any sample whose error flag is non-zero is replaced by linear interpolation in time between good samples, bin by bin, with extrapolation at the ends (`scipy.interp1d`). $\sigma_f$ is interpolated the same way.
-   - ⚠ Flag (F4): *any* non-zero flag bit triggers replacement, so the paper needs to say which flag bits count as "bad".
-2. **Counts reconstruction.** $N = \mathrm{round}\big[(f/\sigma_f)^2\big]$, i.e. Poisson statistics are assumed. Bins with $N\le 0$, $f\le 0$ or NaN are set to NaN. One-count bins are kept.
+1. **Bad distributions.** Any sample whose L2 error flag is non-zero is replaced by linear interpolation in time between good samples, bin by bin, with extrapolation at the ends (`scipy.interp1d`). $\sigma_f$ is interpolated the same way.
+   - **(F4)** The flag bits are defined in the CDF as: bit 0 = manually flagged interval, bit 1 = overcounting/saturation likely, bit 2 = compression pipeline error. No sample is flagged in this event, so no interpolation happens.
+2. **Counts reconstruction.** $N = \mathrm{round}\big[(f/\sigma_f)^2\big]$, i.e. Poisson statistics are assumed. Bins with $N\le 0$ or $f\le 0$ are set to **$f = 0$**: no counts is a measurement of no particles, not missing data. One-count bins are kept.
 3. **Units.** $f$ is converted from s³ cm⁻⁶ to s³ m⁻⁶ (×10¹²).
 4. **Two products.** Both are carried through the rest of the pipeline:
    - `vdf_raw` $= f$ (s³ m⁻⁶)
    - `vdf_vol` $= f\,\Delta^3 v$ (m⁻³), the number density contained in each instrument bin
 
-The event has 48% of raw bin values set to NaN by step 2. These are mostly empty (zero-count) bins.
+The L2 distributions contain no NaN or negative values for this event (all four probes).
 
 ## 5. Frames of reference and coordinate systems
 
@@ -114,7 +116,7 @@ $$
 $$
   applied at each time with the 30 ms-averaged $\mathbf{B}$.
 
-⚠ Flag (F5): $t_X$, and therefore $\mathbf{U}$ and every frame-dependent output, depends on the choice of `trange`, because the max-gradient search runs over the whole window.
+**(F5)** $t_X$ is found within `trange`, so $\mathbf{U}$, and everything computed in the reconnection frame, follows from that window choice. The paper should describe how $t_X$ and $\mathbf{U}$ are determined.
 
 ### 5.2 Field-aligned coordinates (FAC), time-dependent
 - **Construction.** `pyspedas.fac_matrix_make` with `other_dim='Xgse'` is applied to the 30 ms-averaged $\mathbf{B}$ at each time sample:
@@ -139,7 +141,7 @@ $$
   - N = (0.916, 0.259, 0.307)
 - **What gets rotated.** Velocities (`vel_proc.vv_to_lmn`), $\mathbf{E}'$ (`evec_proc.evec_to_lmn`) and $\mathbf{B}$.
 
-⚠ Flag (F6): the MVA eigenvalues (and their ratios, λ_max/λ_int and λ_int/λ_min) are neither saved nor checked, so the quality of the LMN determination isn't recorded. The LMN also depends on `trange`.
+**(F6)** The MVA eigenvalues are not saved by `fpc_mrx_main`. They have been checked separately. Planned: pass `evname=` to `lmn_matrix_make` and store the eigenvalues under `lmn/` in the HDF5 file.
 
 ### 5.4 FAC↔LMN projections
 `coord_utils.fac_lmn_proj` computes, per time sample, $R_{FAC}R_{LMN}^{T}$ and its inverse, and saves them as `meta/fac2lmn` and `meta/lmn2fac`. These are diagnostics only and are not used in any calculation.
@@ -150,28 +152,29 @@ $$
 $$
 T = \tfrac13\left(T_\parallel + 2T_\perp\right),\qquad v_{th}=\sqrt{2T/m} = c\sqrt{2T/(mc^2)},\qquad \langle v_{th}\rangle = \text{mean of } v_{th}(t) \text{ over } \texttt{trange}.
 $$
-A **single** $\langle v_{th}\rangle$ normalizes the grid for all times; it is computed from DES moments. ⚠ Flag (F7): the grid scale therefore depends on `trange` too.
+A **single** $\langle v_{th}\rangle$ normalizes the grid for all times; it is computed from DES moments.
+
+**(F7)** In normalized units, the bin width is set by `bin_width_frac`. The physical bin width, $\Delta\cdot\langle v_{th}\rangle$ (≈ 1110 km/s for Δ = 0.25), depends on the $\langle v_{th}\rangle$ of the chosen `trange`.
 
 ### 6.2 Grid (`vel_proc.vv_to_vmap`)
-- **Extent.** A Cartesian cube in normalized velocity $\tilde v_j = v'_j/\langle v_{th}\rangle$ spanning $[-v_{lim}, v_{lim})$, with $v_{lim}$ = `vth_lim` = 3.5. The same grid is used for all three components and for both FAC and LMN.
-- **Bins.** Number of bins $n = \lceil 2v_{lim}/\Delta\rceil$, where $\Delta$ = `bin_width_frac`. For $\Delta = 0.25$ that is $n = 28$, with physical bin width $\approx 0.25\langle v_{th}\rangle \approx 1110$ km/s.
-- **Index assignment.** Each measurement's index along axis $j$ is $\lfloor(\tilde v_j + v_{lim})/\Delta\rfloor$.
-- **Excluded measurements.** A measurement is dropped if **any** component lies outside the cube. For MMS1, 42.6% of instrument bins (all bins, including empty ones) fall outside.
+- **Bins.** $n = \lceil 2v_{lim}/\Delta\rceil$, where $v_{lim}$ = `vth_lim` = 3.5 and Δ = `bin_width_frac`. For Δ = 0.25, $n$ = 28.
+- **Extent.** A Cartesian cube in normalized velocity $\tilde v_j = v'_j/\langle v_{th}\rangle$ spanning $[-\tfrac{n\Delta}{2}, \tfrac{n\Delta}{2})$. That is ±3.5 when $2v_{lim}/\Delta$ is a whole number (Δ = 0.10, 0.20, 0.25, 0.50), and slightly wider otherwise (±3.6 for Δ = 0.30 and 0.40), so every bin is exactly Δ wide and the grid is centred on 0. The same grid is used for all three components and for both FAC and LMN.
+- **Index assignment.** Each measurement's index along axis $j$ is $\lfloor(\tilde v_j + n\Delta/2)/\Delta\rfloor$.
+- **Excluded measurements.** A measurement is dropped if **any** component lies outside the cube. For MMS1 at Δ = 0.25, 42.6% of instrument bins (all bins, including empty ones) fall outside.
 - **Saved quantities.** Bin edges and centres, both physical (km/s) and normalized: `edges`, `edges_n`, `binc`, `binc_n`.
-
-⚠ Flag (F8): the edges and centres come from `linspace(-v_lim, v_lim, n+1)`, but indices are assigned with the nominal Δ. When $2v_{lim}/\Delta$ is not an integer (e.g. Δ = 0.3 or 0.4 with $v_{lim}$ = 3.5), the saved edges and centres don't match the bins that measurements were actually placed in, and the gradient in §7.3 uses the wrong spacing. For Δ = 0.10, 0.20, 0.25 and 0.50 they match. This affects the bin-width validation runs at 0.30 and 0.40.
+- **Symmetry about $v_j = 0$.** For an even $n$ (e.g. 28), 0 is a bin edge. For an odd $n$ (e.g. 35 for Δ = 0.20), 0 is the centre of the middle bin.
 
 ### 6.3 Binning (`vdf_proc.bin_vdf_3d`, [`analysis/fpc_proc.bin_cprime_3d`](../fipcore/analysis/fpc_proc.py))
-Measurements are scatter-added into the 3D grid independently for each time sample, with the count of contributing measurements saved as `npts_*`. There are two variants:
+Measurements are scatter-added (`np.add.at`) into the 3D grid independently for each time sample, with the count of contributing measurements saved as `npts_*`. There are two variants:
 
 | Variant | Definition | Units | Functions |
 |---|---|---|---|
 | `_vol` (volume-weighted sum) | $\sum_{i\in\text{cell}} f_i\,\Delta^3 v_i$ | m⁻³ (density in the cell) | `bin_vdf_vol`, `bin_cprime_vol` |
 | `_avg` (plain average) | $\frac{1}{N_{cell}}\sum_{i\in\text{cell}} f_i$ | s³ m⁻⁶ | `bin_vdf_avg`, `bin_cprime_avg` |
 
-**The published figures use the `_vol` products** (`bvdf_vol`, `c_vol`).
-
-⚠ Flag (F9): NaN values from §4 step 2 are included in the sums (`np.add.at`), so **one NaN measurement makes the whole cell NaN**. In the MMS1 file, 130,191 of the 571,161 occupied cell-times (23%) are NaN for this reason. Later steps use `nansum`, which treats these cells as zero. If the intent was to ignore zero-count measurements rather than blank the cell, this is a bug.
+- **The published figures use the `_vol` products** (`bvdf_vol`, `c_vol`).
+- Zero-count measurements enter both sums as $f = 0$ (§4), so they add nothing to `_vol` and count toward the `_avg` mean.
+- Cells that no measurement reaches are 0 in `_vol` and 0/0 = NaN in `_avg`.
 
 ## 7. Field–particle correlation
 
@@ -192,7 +195,7 @@ $$
 $$
   saved as `JE_tot`, shape (3, ntime).
 
-  ⚠ Flag (F10): this sum covers only the ±3.5 ⟨v_th⟩ cube and treats NaN cells (F9) as zero, so it can underestimate the moment-based $\mathbf{J}\cdot\mathbf{E}'$ (§9).
+**(F10)** The sum covers only the velocity cube of §6.2, so particles outside it don't contribute. Keep this in mind when comparing with the moment-based $\mathbf{J}\cdot\mathbf{E}'$ (§9).
 
 ### 7.3 Standard FPC (`fpc_proc.compute_fpc`)
 The standard correlation $C_{E_j} = -q\frac{v_j^2}{2}\frac{\partial f}{\partial v_j}E_j$ is obtained from $C'$ using the identity
@@ -202,17 +205,15 @@ $$
 Substituting $C'_{E_j}=qv_jfE_j$ recovers $-q\frac{v_j^2}{2}E_j\,\partial f/\partial v_j$.
 - The derivative is `np.gradient`: second-order central differences in the interior and first-order one-sided differences at the grid edges. The spacing is the median difference of the physical bin centres (km/s), and $v_j$ is the physical bin centre, so $C$ has the same units as the binned $C'$.
 - It is applied to both `bCprime_vol` (giving `c_vol`, the published one) and `bCprime_avg` (giving `c_avg`).
-- ⚠ Flag (F11): NaN cells (F9) and empty cells in `_avg` (0/0 = NaN) spread to their neighbours through the finite difference.
+- **(F11)** `c_vol` contains no NaNs. In `c_avg`, empty cells (0/0) are NaN and spread to their neighbours through the finite difference. `c_avg` is not used in the published figures.
 
-### 7.4 Correlation interval and time averaging
-**No time averaging is applied anywhere in `fipcore`.** Every output is computed independently at each 30 ms DES sample: there is no correlation interval τ and no running mean of $C'$ or $C$.
-
-⚠ Flag (F12): the effective correlation interval is one DES sample (30 ms). If the paper describes a correlation interval τ, it needs to say this explicitly.
+### 7.4 Correlation interval
+**(F12)** By design, the correlation is computed **independently at each 30 ms DES sample**, with no averaging over a correlation interval τ. Reconnection is a rapidly evolving process, so each time step is analysed on its own. The paper should state this, since field–particle correlation readers often expect a stated τ.
 
 ### 7.5 Reductions used for figures
 - **2D plots** ([`plotting/imagecont_vdf_fpc.imagecont_vdf_fpc`](../fipcore/plotting/imagecont_vdf_fpc.py), [`utils/helper_utils.slice3d_to_2d`](../fipcore/utils/helper_utils.py) with `mode="integrate"`): `nansum` over the third velocity axis of `bvdf_vol` and `c_vol` at one time index. This is a sum over cells, not multiplied by a bin width. `mode="slice"` (a mid-plane cut) exists but isn't used for the published figures.
 - **1D plots** (`load_plt_mms_data` in `Publication_plots.ipynb`): `nansum` of `c_vol` and `bvdf_vol` over two velocity axes, plotted against normalized bin centres (`binc_n`).
-- **Peak times.** Figures use per-probe time indices `t_peaks = [62, 58, 60, 62]` (MMS1–4). These are set by hand in the notebook. ⚠ Flag (F13): the criterion for choosing them is not in the code, so the paper needs to state it.
+- **(F13) Peak times.** Each probe is shown at the time of maximum FPC-derived energy transfer, the argmax over time of `JE_tot` summed over components. This gives `t_peaks = [62, 58, 60, 62]` for MMS1–4, which the notebook sets explicitly.
 - **Colour scales.** VDF panels show `log10(f)`; values ≤ 0 are masked.
 
 ### 7.6 Folded FPC (`fpc_mrx_main.fpc_mrx_fold`, FAC only)
@@ -222,7 +223,8 @@ Substituting $C'_{E_j}=qv_jfE_j$ recovers $-q\frac{v_j^2}{2}E_j\,\partial f/\par
   - $C_{\perp1}$: in the (⊥1,⊥2) and (⊥1,∥) planes
   - $C_{\perp2}$: in the (⊥1,⊥2) and (∥,⊥2) planes
   - $C_\parallel$: in the (⊥1,∥) and (∥,⊥2) planes
-- **Fold index.** The split is at `nbin // 2`, which is symmetric only when `nbin` is even. It is even (28) for Δ = 0.25, but odd (35) for Δ = 0.20. At Δ = 0.20 the fold would pair mismatched bins and the $v_j\approx0$ bin would be counted on only one side.
+- **Fold index.** The split is at `nbin // 2`, which requires an even number of bins (28 for Δ = 0.25).
+  - **(F17)** With an odd count (35 for Δ = 0.20), the upper part has one more bin than the lower part and the addition fails.
 - **Output.** Saved as `fac/cx_folds`, `cy_folds` and `cz_folds`.
 
 ## 8. Background subtraction, δf (`subtract_f0=True`)
@@ -234,12 +236,12 @@ $$
 - $n$, $T_\parallel$ and $T_\perp$ are the DES moments at each time, so $f_0$ is local and time-varying.
 - Velocities are the FAC, reconnection-frame ones from §5.
 - Then $\delta f\,\Delta^3v = f\Delta^3v - f_0\Delta^3v$ replaces `vdf_vol`, and $f_0$ is saved as `fac/vdf_eq`. Output files are tagged `df`.
+- In zero-count bins, where $f = 0$, this gives $\delta f = -f_0$.
 - The docstrings call $f_0$ "tri-Maxwellian", but the formula has a single perpendicular temperature, which makes it a bi-Maxwellian.
 
-⚠ Flags:
-- **F14:** with `v_flow=None` (as in the published runs), $f_0$ is centred at $\mathbf{v}'=0$, i.e. at the ion velocity at the X-line $\mathbf{U}$, **not** at the local electron bulk velocity $\mathbf{V}_e(t)$. Any electron drift relative to $\mathbf{U}$ therefore stays in δf.
-- **F15:** the subtraction is applied to the `_vol` chain only (`bvdf_vol`, `Cprime_vol`, `bCprime_vol`, `c_vol`, `JE_tot`). `vdf_raw`, `Cprime_raw`, `bvdf_avg`, `bCprime_avg` and `c_avg` stay full-$f$ even in `df` files.
-- **F16:** measurements that are NaN in $f$ (§4) stay NaN in δf; they are not replaced by $-f_0$.
+Notes:
+- **(F14)** With `v_flow=None`, $f_0$ is centred at $\mathbf{v}'=0$, the ion velocity at the X-line $\mathbf{U}$, rather than at the local electron bulk velocity. This is intended: any electron drift relative to $\mathbf{U}$ is meant to appear in δf.
+- **(F15)** The subtraction is applied to the `_vol` chain only (`bvdf_vol`, `Cprime_vol`, `bCprime_vol`, `c_vol`, `JE_tot`). `vdf_raw`, `Cprime_raw`, `bvdf_avg`, `bCprime_avg` and `c_avg` remain full-$f$ in `df` files. Planned fix: add `vdf_raw -= vdf_eq` alongside the `vdf_vol` subtraction.
 
 ## 9. Ancillary plasma parameters (`fpc_mrx_main.fpc_mrx_plasma_params`)
 
@@ -252,33 +254,42 @@ Computed on the DES time base, with ion moments interpolated to it (§2):
 
 ## 10. Outputs
 
-Results are written to `data/mms{probe}_{rate}_{f|df}_{species}_{Δ:.2f}_{YYYYMMDD}_{hhmmss}_{hhmmss}.h5` by [`utils/io_utils.h5sav`](../fipcore/utils/io_utils.py), which appends to the file and overwrites datasets that already exist. The groups are `meta`, `gse`, `fac` and `lmn`. [CLAUDE.md](../CLAUDE.md) lists the keys. The main published quantities are `fac/bvdf_vol`, `fac/c_vol`, `fac/c*_folds` and `fac/JE_tot`, plus the `lmn/` equivalents.
+Results are written to `data/mms{probe}_{rate}_{f|df}_{species}_{Δ:.2f}_{YYYYMMDD}_{hhmmss}_{hhmmss}.h5` by [`utils/io_utils.h5sav`](../fipcore/utils/io_utils.py). It opens an existing file in append mode and replaces only the datasets it writes; any other datasets already in the file are kept. Because of this, `fpc_mrx_fold` must be rerun after `fpc_mrx_main` so the folds match the new `c_vol`. The groups are `meta`, `gse`, `fac` and `lmn`. [CLAUDE.md](../CLAUDE.md) lists the keys. The main published quantities are `fac/bvdf_vol`, `fac/c_vol`, `fac/c*_folds` and `fac/JE_tot`, plus the `lmn/` equivalents.
 
 ---
 
-## 11. Flags and open questions
+## 11. Review items and status
 
-| # | Issue | Affects paper? |
+**Status key:**
+- **Fixed:** corrected in code (commit given).
+- **Describe:** behaviour is intended; state it in the paper.
+- **Open:** known, not yet changed.
+
+| # | Item | Status |
 |---|---|---|
-| F1 | Averaged E/B/V_sc are on avg_data's uniform grid and paired with DES samples by index, not timestamp | Minor. State "boxcar-averaged to 30 ms" |
-| F2 | Channels with $\mathcal{E}_{table}<eV_{sc}$ would become NaN and be dropped (didn't occur for this event) | No, for this event |
-| F3 | Instrument (DBCS) velocities treated as GSE; no despin rotation applied | State the assumption |
-| F4 | Any non-zero FPI error flag triggers time interpolation of the whole distribution | State the criterion |
-| F5 | X-line time (max \|dB_L/dt\| over `trange`) and frame velocity **U** depend on `trange`; one **U** for the whole interval | **Yes**, describe |
-| F6 | MVA eigenvalue ratios not saved; LMN quality not reported | Report λ ratios |
-| F7 | Grid normalization ⟨v_th⟩ is a mean over `trange` | Describe |
-| F8 | Saved edges/centres inconsistent with bin assignment when 7/Δ is not an integer (Δ = 0.3, 0.4) | **Yes**, for the bin-width comparison |
-| F9 | Any zero-count/NaN measurement blanks the whole cell in `_vol` and `_avg` sums (23% of occupied cells here) | **Yes**. Likely unintended; review before publishing |
-| F10 | `JE_tot` covers only the ±3.5 v_th cube and skips NaN cells | Mention when comparing with moment J·E′ |
-| F11 | NaN cells spread through ∂/∂v_j | Follows from F9 |
-| F12 | **No correlation-interval (τ) averaging**: every result is a single 30 ms sample | **Yes**, state explicitly |
-| F13 | Peak time indices [62, 58, 60, 62] set by hand | State the selection criterion |
-| F14 | f₀ centred on the ion X-line velocity U, not the local V_e | **Yes**, describe |
-| F15 | δf applies only to the `_vol` products | Describe which products are shown |
-| F16 | NaN bins remain NaN in δf (not −f₀) | Minor |
+| F1 | Averaged E/B/V_sc paired with DES samples by index; timestamps within 12.4 ms | Describe: "boxcar-averaged to the 30 ms DES cadence" |
+| F2 | Channels below $eV_{sc}$ would give NaN speeds | Not applicable to this event (lowest channel ≥ 10.96 eV, $V_{sc}$ ≤ 4.1 V) |
+| F3 | Velocities built from L2 despun-frame angles are used with GSE quantities without a further rotation (frames ≈ 2.5–3.5° apart here) | Describe: author's choice |
+| F4 | Any non-zero L2 error flag (bits 0–2) triggers time interpolation | Describe; no samples flagged in this event |
+| F5 | $t_X$ = max \|dB_L/dt\| within `trange`; one frame velocity **U** for the interval | Describe |
+| F6 | MVA eigenvalues not saved by the pipeline | Open: planned `evname=` and HDF5 storage |
+| F7 | Physical bin width = Δ·⟨v_th⟩, with ⟨v_th⟩ averaged over `trange` | Describe |
+| F8 | Saved edges/centres didn't match bin assignment when 2·vth_lim/Δ wasn't whole | **Fixed** (`5955177`); Δ = 0.25 unaffected |
+| F9 | A zero-count measurement made its whole velocity cell NaN | **Fixed** (`56c2d20`); `JE_tot` changes ≤ 2%, peak times unchanged |
+| F10 | `JE_tot` covers only the velocity cube | Describe (NaN part resolved by F9) |
+| F11 | NaN cells spread through ∂/∂v | **Fixed** for `c_vol` by F9; empty cells in `c_avg` remain NaN (not published) |
+| F12 | Correlation computed per 30 ms sample, no τ averaging | Describe: by design |
+| F13 | Peak time per probe | Describe: argmax of `JE_tot` → [62, 58, 60, 62] |
+| F14 | f₀ centred on the ion X-line velocity **U** | Describe: by design |
+| F15 | δf applied only to the `_vol` products | Open: planned `vdf_raw -= vdf_eq` |
+| F16 | Zero-count bins were dropped from δf instead of giving −f₀ | **Fixed** by F9 |
+| F17 | `fpc_mrx_fold` fails for an odd number of bins (Δ = 0.20) | Open: fold around the centre bin if needed |
 
-Smaller code issues noticed. These don't change results for the published runs:
-- `vdf_proc.equilibrium_vdf` raises the misspelled `ValuoeError` for an invalid species, which would surface as a `NameError`.
-- `is_interleaved` passes `atol` into `np.allclose`'s positional `rtol` slot, so the check uses rtol = 10⁻⁶ and the default atol.
-- The `fpc_mrx_main` docstring says `mean_phi` defaults to True; the actual default is False.
-- Species strings are `'e'`/`'ion'` in analysis code but `'e'`/`'i'` in plotting docstrings.
+Code housekeeping:
+- **Fixed in `1ccba42`:**
+  - the misspelled `ValuoeError` in `equilibrium_vdf`
+  - `is_interleaved` now passes `atol` by keyword to `np.allclose`
+  - plotting docstrings now list species as `'e'`/`'ion'`
+- **Open:**
+  - the `fpc_mrx_main` docstring says `mean_phi` defaults to True; the actual default is False
+  - the `vv_to_vmap_3d` docstring still describes `bin_width_frac` as a "fraction of v_range"
