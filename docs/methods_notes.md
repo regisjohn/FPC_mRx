@@ -1,6 +1,6 @@
 # fipcore methods notes
 
-Notes for writing the methodology section. They describe what the code in `fipcore/` does as of commit `b5dbe50`. Nothing here is taken from the literature or from intent. Items that need a sentence in the paper, or are still open in the code, are labelled **(Fn)** and collected in [§11](#11-review-items).
+Notes for writing the methodology section. They describe what the code in `fipcore/` does as of commit `d03f19c`. Nothing here is taken from the literature or from intent. Items that need a sentence in the paper are labelled **(Fn)** and collected in [§11](#11-review-items).
 
 Function references use the form `module.function`. All modules are under [`fipcore/`](../fipcore/).
 
@@ -220,8 +220,9 @@ Substituting $C'_{E_j}=qv_jfE_j$ recovers $-q\frac{v_j^2}{2}E_j\,\partial f/\par
   - $C_{\perp1}$: in the (⊥1,⊥2) and (⊥1,∥) planes
   - $C_{\perp2}$: in the (⊥1,⊥2) and (∥,⊥2) planes
   - $C_\parallel$: in the (⊥1,∥) and (∥,⊥2) planes
-- **Fold index.** The split is at `nbin // 2`, which requires an even number of bins (28 for Δ = 0.25).
-  - **(F10)** With an odd count (35 for Δ = 0.20), the upper part has one more bin than the lower part and the addition fails.
+- **Fold index.** The positive half starts at `idx = nbin // 2`.
+  - Even `nbin` (28 for Δ = 0.25): $v_j = 0$ is the edge between bins `idx−1` and `idx`, and bin `idx+k` receives bin `idx−1−k`.
+  - Odd `nbin` (35 for Δ = 0.20): bin `idx` is centred on $v_j = 0$ and keeps its own value, and bin `idx+k` receives bin `idx−k`.
 - **Output.** Saved as `fac/cx_folds`, `cy_folds` and `cz_folds`.
 
 ## 8. Background subtraction, δf (`subtract_f0=True`)
@@ -238,7 +239,7 @@ $$
 - The docstrings call $f_0$ "tri-Maxwellian", but the formula has a single perpendicular temperature, which makes it a bi-Maxwellian.
 
 Notes:
-- **(F11)** With `v_flow=None`, $f_0$ is centred at $\mathbf{v}'=0$, the ion velocity at the X-line $\mathbf{U}$, rather than at the local electron bulk velocity. This is intended: any electron drift relative to $\mathbf{U}$ is meant to appear in δf.
+- **(F10)** With `v_flow=None`, $f_0$ is centred at $\mathbf{v}'=0$, the ion velocity at the X-line $\mathbf{U}$, rather than at the local electron bulk velocity. This is intended: any electron drift relative to $\mathbf{U}$ is meant to appear in δf.
 
 ## 9. Ancillary plasma parameters (`fpc_mrx_main.fpc_mrx_plasma_params`)
 
@@ -270,10 +271,4 @@ Results are written to `data/mms{probe}_{rate}_{f|df}_{species}_{Δ:.2f}_{YYYYMM
 | F7 | `JE_tot` sums only the velocity cube of §6.2 | Relevant when comparing with moment J·E′ |
 | F8 | Correlation computed per 30 ms sample, no τ averaging | By design |
 | F9 | Peak time per probe = argmax of `JE_tot` | [62, 58, 60, 62] for MMS1–4 |
-| F11 | f₀ centred on the ion X-line velocity **U** | By design; electron drift appears in δf |
-
-**Open in the code:**
-
-| # | Item | Planned change |
-|---|---|---|
-| F10 | `fpc_mrx_fold` fails for an odd number of bins (e.g. Δ = 0.20) | Fold around the centre bin |
+| F10 | f₀ centred on the ion X-line velocity **U** | By design; electron drift appears in δf |
