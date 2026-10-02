@@ -308,8 +308,8 @@ def vv_to_vmap_3d(vv_coord, vth_mean, vth_lim=(3.5, 3.5, 3.5),
     - vth_mean: float; mean thermal velocity for normalization in km/s
     - vth_lim: tuple of 3 floats; limits of normalized velocity space for each 
         component (default: 3.5)
-    - bin_width_frac: tuple of 3 floats; fraction of v_range for bin width for 
-        each component (default : 0.1)
+    - bin_width_frac: tuple of 3 floats; bin width as a fraction of vth_mean
+        for each component (default : 0.1)
 
     Returns:
     - dict containing:

@@ -45,7 +45,7 @@ def fpc_mrx_main(trange, species='e', vth_lim=3.5, bin_width_frac=0.25, mean_phi
         Default is 3.5.
     - bin_width_frac (float): Fraction of the thermal velocity used to 
         determine the bin width. Default is 0.25.
-    - mean_phi (bool): mean or instantaneous phi values. Default: True.
+    - mean_phi (bool): mean or instantaneous phi values. Default: False.
     - probe (str): Probe number to analyze. Default is '1'.
     - data_rate (str): Data rate of the data. Default is 'brst'.
     - level (str): Level of the data. Default is 'l2'.
