@@ -68,7 +68,7 @@ def equilibrium_vdf(vv_fac, den, t_para, t_perp, species='e', v_flow=None):
     v_perp_sq = v_x**2 + v_y**2  # Shape: (16384, ntime)
     v_para_sq = v_z**2           # Shape: (16384, ntime)
 
-    # Setting up Tri-Maxwellian
+    # Setting up 3D Maxwellian with gyrotropic T_perp (T_perp1 = T_perp2), i.e. a bi-Maxwellian
     amplitude = den_si / ((np.pi**1.5) * (w_perp**2) * w_para) # Shape: (ntime,)
     exponent = -(v_perp_sq / (w_perp**2)) - (v_para_sq / (w_para**2))
     vdf_eq = amplitude * np.exp(exponent)

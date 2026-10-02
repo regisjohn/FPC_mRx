@@ -185,7 +185,7 @@ $$
 
 ## 9. Background subtraction (δf)
 
-To isolate the non-thermal part of the distribution, a gyrotropic bi-Maxwellian
+To isolate the non-thermal part of the distribution, a gyrotropic bi-Maxwellian (a 3D Maxwellian with equal perpendicular temperatures, $T_{\perp1} = T_{\perp2} = T_\perp$)
 $$
 f_0 = \frac{n}{\pi^{3/2}\,w_\perp^2\,w_\parallel}\exp\!\left[-\frac{v_{\perp1}^2+v_{\perp2}^2}{w_\perp^2}-\frac{v_\parallel^2}{w_\parallel^2}\right],\qquad w_{\parallel,\perp}=\sqrt{2T_{\parallel,\perp}/m_e},
 $$
