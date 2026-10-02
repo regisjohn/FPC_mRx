@@ -124,7 +124,8 @@ def fpc_mrx_main(trange, species='e', vth_lim=3.5, bin_width_frac=0.25, mean_phi
     vv = vel.vbin_to_vv(vbin, 'phi', mean_phi=mean_phi)
     
     # --- Shift into Reconnection Frame ---
-    coord.lmn_matrix_make('bvec_gse_dwn', trange, newname=lmn_mat_name) # Creating LMN matrix
+    coord.lmn_matrix_make('bvec_gse_dwn', trange, newname=lmn_mat_name,
+                          evname='lmn_eigvals') # Creating LMN matrix and MVA eigenvalues
     tvector_rotate(mat_var_in=lmn_mat_name,vec_var_in='bvec_gse_dwn',
                         newname='bvec_lmn') # Rotating B vector into LMN frame
     
@@ -142,6 +143,7 @@ def fpc_mrx_main(trange, species='e', vth_lim=3.5, bin_width_frac=0.25, mean_phi
 
     # --- Rotate velocity bins into LMN Coordinates ---
     _, lmn_matrix  = get_data(lmn_mat_name)
+    _, lmn_eigvals = get_data('lmn_eigvals') # (1, 3): lambda_max, lambda_int, lambda_min
     vv_lmn = vel.vv_to_lmn(vv_recx, lmn_matrix) # Shift into LMN coordinates
 
     # --- Computing FAC to LMN unit vector projections ---
@@ -283,6 +285,7 @@ def fpc_mrx_main(trange, species='e', vth_lim=3.5, bin_width_frac=0.25, mean_phi
         },
         "lmn": {
             "rot_mat":      lmn_matrix,
+            "eigvals":      lmn_eigvals[0],
             "vv":           vv_lmn,
             "vmap":         vmap_lmn,
             "bvec":         bvec_lmn,
