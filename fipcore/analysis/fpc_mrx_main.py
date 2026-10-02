@@ -171,6 +171,7 @@ def fpc_mrx_main(trange, species='e', vth_lim=3.5, bin_width_frac=0.25, mean_phi
         vdf_eq = vdf.equilibrium_vdf(vv_fac, 'den', 'te_para', 'te_perp', 
                         species=species, v_flow=v_flow)
         vdf_vol -= vdf_eq*vvol # delta_f
+        vdf_raw -= vdf_eq      # delta_f (not volume-weighted)
 
     # --- Binning the VDF ---
     # in FAC:
