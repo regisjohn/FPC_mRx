@@ -1,6 +1,6 @@
 # Methods notes: field–particle correlation analysis of MMS electron energization
 
-These notes are source material for writing the methodology section. They describe exactly what the analysis code (`fipcore`, a Python package) does, applied to the MMS magnetopause reconnection event of 2015-12-09. Equations are the ones the code implements. Numbers quoted for the event come from the processed MMS data. Appendix A maps each step to the code, for traceability only.
+These notes are source material for writing the methodology section. They describe exactly what the analysis code (`fipcore`, a Python package) does, applied to the MMS magnetosheath reconnection event of 2015-12-09. Equations are the ones the code implements. Numbers quoted for the event come from the processed MMS data. Appendix A maps each step to the code, for traceability only.
 
 ---
 
