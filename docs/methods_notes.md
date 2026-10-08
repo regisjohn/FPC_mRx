@@ -74,11 +74,15 @@ $$
 - φ takes the per-sweep azimuth angles.
 - The angles are given in the despun spacecraft frame, and the resulting velocities are used directly with the GSE field and moment data, with no further coordinate rotation. For this event the despun and GSE frames differ by ≈2.5–3.5°.
 
-**Phase-space volume.** The velocity-space volume of each instrument bin is
+**Phase-space volume.** FPI reports the phase-space density $f$ on a spherical instrument grid whose bins cover very different amounts of velocity space:
+- The energy channels are spaced geometrically (each about 1.28 times the previous one, from 12.4 eV to 27.6 keV), so bin volume grows roughly as $v^3$.
+- The solid angle of a polar bin is about 10 times larger at the equator than next to the poles.
+
+To combine measurements from different instrument bins correctly when they are put onto the velocity grid (§7), each value of $f$ is weighted by the velocity-space volume of its bin. Then $f\,\Delta^3 v$ is the number density each bin represents, and summing it gives the discrete form of $\int f\,d^3v$, conserving particle number. The volume of each instrument bin is
 $$
 \Delta^3 v = \tfrac13\left(v_{hi}^3 - v_{lo}^3\right)\left(\cos\theta_{lo}-\cos\theta_{hi}\right)\Delta\phi,
 $$
-- $v_{lo}$ and $v_{hi}$ are midpoints between adjacent channel speeds, with the outermost edges mirrored.
+- $v_{lo}$ and $v_{hi}$ are midpoints between adjacent channel speeds.
 - θ edges divide $[0,\pi]$ into 16 equal parts, and $\Delta\phi = 2\pi/32$.
 - Volumes are computed for every time sample, because the corrected energies change with $V_{sc}$.
 

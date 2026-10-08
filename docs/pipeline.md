@@ -109,10 +109,25 @@ $$
 $$
 \Delta^3 v = \tfrac13\left(v_{hi}^3 - v_{lo}^3\right)\left(\cos\theta_{lo}-\cos\theta_{hi}\right)\Delta\phi
 $$
-- $v_{lo}$ and $v_{hi}$ are the midpoints between adjacent channel speeds; the outermost edges are mirrored.
+**Why it's needed.** FPI reports the phase-space density $f$ (s³ m⁻⁶) on a spherical instrument grid (energy × θ × φ). Its bins cover very different amounts of velocity space:
+- The energy channels are spaced geometrically (each about 1.28 times the previous one for DES), so the speed width of a channel grows with speed and the volume grows roughly as $v^3$.
+- The solid angle of a θ bin is about 10 times larger at the equator than next to the poles.
+- Together, non-empty bin volumes span almost six orders of magnitude.
+
+When these measurements are put onto the Cartesian grid (§6), a cell usually receives several instrument bins. Adding up $f$, or averaging it, would treat a small low-energy bin and a large high-energy bin as equivalent. Adding up $f\,\Delta^3v$, the number of particles per unit volume of space that each instrument bin represents, conserves particle number:
+- the sum over a cell is that cell's number density, the discrete form of $\int_{cell} f\,d^3v$
+- the sum over all cells is the density inside the grid
+
+The same weighting makes $\sum q v_j E'_j f\,\Delta^3v$ the discrete form of $\int q v_j E'_j f\,d^3v = J_jE'_j$. This is why the volume-weighted products (`_vol`) are the physically meaningful ones, and why `JE_tot` comes out in W m⁻³ (§6.3, §7).
+
+**How it's computed:**
+- $v_{lo}$ and $v_{hi}$ are the midpoints between adjacent channel speeds. The lowest edge is mirrored below the lowest channel.
+- The highest edge is currently set equal to the last midpoint, which gives the highest energy channel zero volume. That channel lies far outside the analysis grid, so binned results are unaffected (see the note below).
 - θ edges are 16 uniform steps over $[0,\pi]$; φ edges are 32 uniform steps over $[0,2\pi]$ ($\Delta\phi = 2\pi/32$).
-- Volumes are computed per time sample, in (m/s)³, and saved as `meta/vvol`.
-- As a check, the function prints the sum of all bin volumes next to the analytic spherical-shell volume.
+- Volumes are computed per time sample, in (m/s)³, because the corrected energies change with $V_{sc}$, and saved as `meta/vvol`.
+- As a check, the function prints the sum of all bin volumes next to the analytic volume of the spherical shell between the lowest and highest edges. The two should match, showing the bins fill velocity space without gaps or overlaps.
+
+> **Note:** `v_edges[:, -1] = v_centers[:, -1] + (v_edges[:, -2] - v_centers[:, -1])` simplifies to `v_edges[:, -2]`, so the top channel has zero width. Mirroring it like the bottom edge would be `v_centers[:, -1] + (v_centers[:, -1] - v_edges[:, -2])`. The shell-volume check doesn't catch this, because it uses the same top edge.
 
 ## 4. Distribution processing ([`analysis/vdf_proc.process_vdf`](../fipcore/analysis/vdf_proc.py))
 
