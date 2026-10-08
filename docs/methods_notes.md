@@ -138,6 +138,7 @@ $$
 - **Extent.** ±3.5 ⟨v_th,e⟩ when 7/Δ is a whole number, which covers all widths used except 0.30 and 0.40. For those two, the grid extends slightly, to ±3.6.
 - **Where v = 0 falls.** With an even number of bins (28 for Δ = 0.25), $v_j = 0$ is a bin edge. With an odd number, it is the centre of the middle bin.
 - **Excluded measurements.** A measurement is excluded if any of its three components lies outside the grid.
+- **Check of the cell assignment.** The assignment was verified visually by plotting measurements in 2D velocity planes together with the outlines of the grid cells they were assigned to. This was done in the (v∥, v⊥1) and (v∥, v⊥2) planes in FAC and the (v_N, v_L) and (v_N, v_M) planes in LMN, for one time sample.
 
 **Binning.** At each time sample, every measurement is assigned to a grid cell. Two binned forms are computed:
 - **Volume-weighted (used for all results shown):** $\sum_{i \in \text{cell}} f_i\,\Delta^3 v_i$, the number density in the cell (m⁻³).
@@ -228,6 +229,7 @@ On the same 30 ms time base:
 | E′ and its rotations | `evec_to_recx`, `evec_to_fac`, `evec_to_lmn` ([analysis/evec_proc.py](../fipcore/analysis/evec_proc.py)) |
 | LMN (MVA) | `lmn_matrix_make` ([utils/coord_utils.py](../fipcore/utils/coord_utils.py)) |
 | Thermal speed, grid | `compute_vth` (helper_utils.py), `vv_to_vmap` (vel_proc.py) |
+| Grid-assignment check (diagnostic plot) | `plt_vmap_check` ([plotting/plt_vmap_check.py](../fipcore/plotting/plt_vmap_check.py)), used in `scripts/vdf_generation.ipynb` |
 | Binning | `bin_vdf_3d` (vdf_proc.py), `bin_cprime_3d` ([analysis/fpc_proc.py](../fipcore/analysis/fpc_proc.py)) |
 | C′, J·E′, C | `compute_cprime`, `jEtot_cprime`, `compute_fpc` (fpc_proc.py) |
 | f₀ | `equilibrium_vdf` (vdf_proc.py) |

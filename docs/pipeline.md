@@ -176,6 +176,20 @@ A single ⟨v_th⟩, computed from DES moments, normalizes the grid for all time
 
 `vel_proc.vv_to_vmap_3d` is a variant that accepts a different extent and bin width for each component.
 
+**Checking the binning** ([`plotting/plt_vmap_check.plt_vmap_check`](../fipcore/plotting/plt_vmap_check.py)). This diagnostic plot shows whether measurements land in the right grid cells. It isn't called by the pipeline; use it from a notebook after `vv_to_vmap`.
+
+- **Inputs.** The velocities in one coordinate system (`vv_fac` or `vv_lmn`, km/s), the matching `vmap`, the normalized edges `edges_n`, and ⟨v_th⟩.
+- **Selection.** It takes one time sample (`sweep_idx`) and two velocity components: `comp_x` on the horizontal axis and `comp_y` on the vertical.
+- **Drawing.**
+  - Each measurement is plotted at its normalized velocity, $v/\langle v_{th}\rangle$.
+  - For every occupied cell, the outline of that cell is drawn from the saved edges.
+  - Points and outlines are coloured by cell index, so a point and the cell it was assigned to share a colour.
+  - The colour is `3*(i_y mod 3) + (i_x mod 3)`, using 9 of the 10 `tab10` colours. The pattern repeats every 3 cells along each axis, so every cell differs in colour from all 8 of its neighbours, including diagonal ones.
+- **Reading the plot.** Every point should sit inside the outline of its own colour. A point outside its outline means the bin assignment and the saved edges disagree.
+- **Covering all three components.** Each bin index is computed separately for each velocity component, so checking planes that include every component at least once verifies the whole assignment. Each plot shows the measurements binned in its two components; some of these are outside the grid in the third component and so aren't in the 3D binning (§6.2).
+- **Defaults.** The axes span ±1.5 ⟨v_th⟩, the central part of the grid; `xlim`/`ylim` widen this. The figure is 8 × 8 in; `figsize` changes it.
+- **Example.** `scripts/vdf_generation.ipynb` ("Validating the Coordinate Binning") checks the first time sample in four planes: (v∥, v⊥1) and (v∥, v⊥2) in FAC, and (v_N, v_L) and (v_N, v_M) in LMN.
+
 ### 6.3 Binning (`vdf_proc.bin_vdf_3d`, [`analysis/fpc_proc.bin_cprime_3d`](../fipcore/analysis/fpc_proc.py))
 Measurements are scatter-added (`np.add.at`) into the 3D grid independently for each time sample. The number of contributing measurements is saved as `npts_*`. There are two variants:
 
