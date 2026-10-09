@@ -75,10 +75,16 @@ $$
 - The angles are given in the despun spacecraft frame, and the resulting velocities are used directly with the GSE field and moment data, with no further coordinate rotation. For this event the despun and GSE frames differ by ≈2.5–3.5°.
 
 **Phase-space volume.** FPI reports the phase-space density $f$ on a spherical instrument grid whose bins cover very different amounts of velocity space:
-- The energy channels are spaced geometrically (each about 1.28 times the previous one, from 12.4 eV to 27.6 keV), so bin volume grows roughly as $v^3$.
+- The energy channels are spaced geometrically, each about 1.28 times the previous one. In this burst interval the energy table alternates between two tables on successive sweeps, 10.96 eV–24.4 keV and 12.41 eV–27.6 keV (the same for all four spacecraft). Bin volume therefore grows roughly as $v^3$.
 - The solid angle of a polar bin is about 10 times larger at the equator than next to the poles.
 
-To combine measurements from different instrument bins correctly when they are put onto the velocity grid (§7), each value of $f$ is weighted by the velocity-space volume of its bin. Then $f\,\Delta^3 v$ is the number density each bin represents, and summing it gives the discrete form of $\int f\,d^3v$, conserving particle number. The volume of each instrument bin is
+The analysis combines measurements from different instrument bins in two steps:
+1. **Weighting.** Each instrument measurement of $f$ is multiplied by the velocity-space volume $\Delta^3 v$ of its own bin. The units are s³ m⁻⁶ × m³ s⁻³ = m⁻³, so $f\,\Delta^3 v$ is the number density contributed by that bin.
+2. **Binning (§7).** The weighted values of all measurements falling in a grid cell are summed, giving the number density in that cell, the discrete form of $\int_{cell} f\,d^3v$. Because each term is a density, summing conserves particle number.
+
+The weighting must come first because $\Delta^3 v$ belongs to the individual instrument bins. After binning, the volumes of the measurements combined in a cell can no longer be separated.
+
+The volume of each instrument bin is
 $$
 \Delta^3 v = \tfrac13\left(v_{hi}^3 - v_{lo}^3\right)\left(\cos\theta_{lo}-\cos\theta_{hi}\right)\Delta\phi,
 $$

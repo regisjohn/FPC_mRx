@@ -111,14 +111,16 @@ $$
 $$
 **Why it's needed.** FPI reports the phase-space density $f$ (s³ m⁻⁶) on a spherical instrument grid (energy × θ × φ). Its bins cover very different amounts of velocity space:
 - The energy channels are spaced geometrically (each about 1.28 times the previous one for DES), so the speed width of a channel grows with speed and the volume grows roughly as $v^3$.
+  - The energy table comes from the data (`des_energy_brst`) for each sweep; it isn't hard-coded.
+  - In the 2015-12-09 burst data it alternates between two tables, 10.96 eV–24.4 keV and 12.41 eV–27.6 keV, on all four spacecraft. Other intervals may use different tables.
 - The solid angle of a θ bin is about 10 times larger at the equator than next to the poles.
 - Together, non-empty bin volumes span almost six orders of magnitude.
 
-When these measurements are put onto the Cartesian grid (§6), a cell usually receives several instrument bins. Adding up $f$, or averaging it, would treat a small low-energy bin and a large high-energy bin as equivalent. Adding up $f\,\Delta^3v$, the number of particles per unit volume of space that each instrument bin represents, conserves particle number:
-- the sum over a cell is that cell's number density, the discrete form of $\int_{cell} f\,d^3v$
-- the sum over all cells is the density inside the grid
+The volumes are used in two steps:
+1. **Weighting, before binning** (`process_vdf`, §4): `vdf_vol = f * vvol`. Each instrument measurement is multiplied by its own bin volume. Units: s³ m⁻⁶ × m³ s⁻³ = **m⁻³**, so `vdf_vol` is the number density each instrument bin contributes. It is not dimensionless.
+2. **Binning** (`bin_vdf_vol`, §6.3): the `vdf_vol` values of all measurements falling in a Cartesian cell are summed. The result is the cell's number density, the discrete form of $\int_{cell} f\,d^3v$; summed over all cells, it gives the density inside the grid.
 
-The same weighting makes $\sum q v_j E'_j f\,\Delta^3v$ the discrete form of $\int q v_j E'_j f\,d^3v = J_jE'_j$. This is why the volume-weighted products (`_vol`) are the physically meaningful ones, and why `JE_tot` comes out in W m⁻³ (§6.3, §7).
+The weighting has to come first, because $\Delta^3v$ belongs to each instrument bin, and once several measurements are summed into one cell their individual volumes can't be separated. Summing unweighted $f$ instead would count a small low-energy bin and a large high-energy bin equally. The same weighting makes $\sum q v_j E'_j f\,\Delta^3v$ the discrete form of $\int q v_j E'_j f\,d^3v = J_jE'_j$. This is why the volume-weighted products (`_vol`) are the physically meaningful ones, and why `JE_tot` comes out in W m⁻³ (§6.3, §7).
 
 **How it's computed:**
 - $v_{lo}$ and $v_{hi}$ are the midpoints between adjacent channel speeds. The lowest edge is mirrored below the lowest channel.
