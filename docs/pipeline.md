@@ -82,7 +82,7 @@ Every quantity is put on the DES burst time base, which is the timestamps of $\m
 ## 3. Velocity of each measurement
 
 ### 3.1 Energy table and interleaving ([`analysis/vel_proc.nrgy_to_vbin`](../fipcore/analysis/vel_proc.py))
-- The energy table may alternate between two tables on consecutive sweeps (interleaving). `helper_utils.is_interleaved` detects this, and the result is saved as `meta/interleave_info`.
+- In interleaved mode, FPI uses two energy tables on alternate sweeps. `helper_utils.is_interleaved` detects this, and the result is saved as `meta/interleave_info`.
 - Either way, each sweep's own energy table is used, so the velocity grid is built separately for every time sample.
 
 ### 3.2 Spacecraft-potential correction (`vel_proc.nrgy_to_vbin`)
@@ -112,7 +112,7 @@ $$
 **Why it's needed.** FPI reports the phase-space density $f$ (s³ m⁻⁶) on a spherical instrument grid (energy × θ × φ). Its bins cover very different amounts of velocity space:
 - The energy channels are spaced geometrically (each about 1.28 times the previous one for DES), so the speed width of a channel grows with speed and the volume grows roughly as $v^3$.
   - The energy table comes from the data (`des_energy_brst`) for each sweep; it isn't hard-coded.
-  - In the 2015-12-09 burst data it alternates between two tables, 10.96 eV–24.4 keV and 12.41 eV–27.6 keV, on all four spacecraft. Other intervals may use different tables.
+  - The 2015-12-09 burst data is in interleaved mode, with two tables on alternate sweeps: 10.96 eV–24.4 keV and 12.41 eV–27.6 keV, on all four spacecraft. Other intervals may use different tables.
 - The solid angle of a θ bin is about 10 times larger at the equator than next to the poles.
 - Together, non-empty bin volumes span almost six orders of magnitude.
 
@@ -123,13 +123,10 @@ The volumes are used in two steps:
 The weighting has to come first, because $\Delta^3v$ belongs to each instrument bin, and once several measurements are summed into one cell their individual volumes can't be separated. Summing unweighted $f$ instead would count a small low-energy bin and a large high-energy bin equally. The same weighting makes $\sum q v_j E'_j f\,\Delta^3v$ the discrete form of $\int q v_j E'_j f\,d^3v = J_jE'_j$. This is why the volume-weighted products (`_vol`) are the physically meaningful ones, and why `JE_tot` comes out in W m⁻³ (§6.3, §7).
 
 **How it's computed:**
-- $v_{lo}$ and $v_{hi}$ are the midpoints between adjacent channel speeds. The lowest edge is mirrored below the lowest channel.
-- The highest edge is currently set equal to the last midpoint, which gives the highest energy channel zero volume. That channel lies far outside the analysis grid, so binned results are unaffected (see the note below).
+- $v_{lo}$ and $v_{hi}$ are the midpoints between adjacent channel speeds. The outer edges of the lowest and highest channels are mirrored: each is placed the same distance from its channel's speed as that channel's inner edge, on the opposite side.
 - θ edges are 16 uniform steps over $[0,\pi]$; φ edges are 32 uniform steps over $[0,2\pi]$ ($\Delta\phi = 2\pi/32$).
 - Volumes are computed per time sample, in (m/s)³, because the corrected energies change with $V_{sc}$, and saved as `meta/vvol`.
 - As a check, the function prints the sum of all bin volumes next to the analytic volume of the spherical shell between the lowest and highest edges. The two should match, showing the bins fill velocity space without gaps or overlaps.
-
-> **Note:** `v_edges[:, -1] = v_centers[:, -1] + (v_edges[:, -2] - v_centers[:, -1])` simplifies to `v_edges[:, -2]`, so the top channel has zero width. Mirroring it like the bottom edge would be `v_centers[:, -1] + (v_centers[:, -1] - v_edges[:, -2])`. The shell-volume check doesn't catch this, because it uses the same top edge.
 
 ## 4. Distribution processing ([`analysis/vdf_proc.process_vdf`](../fipcore/analysis/vdf_proc.py))
 

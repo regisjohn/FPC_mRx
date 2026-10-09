@@ -63,7 +63,7 @@ so for electrons ($q = -e$), $\mathcal{E}_{corr} = \mathcal{E}_{table} - eV_{sc}
 $$
 v = \sqrt{2\mathcal{E}_{corr}/m_e}.
 $$
-The energy table interleaves between two tables on alternate sweeps during this event, so each sweep's own table is used and the velocity grid is built separately for every time sample.
+DES operates in interleaved mode during this event: it uses two energy tables on alternate sweeps. The code uses each sweep's own table, so the velocity grid is built separately for every time sample.
 
 **Velocity vectors.** Each bin's velocity is
 $$
@@ -75,7 +75,7 @@ $$
 - The angles are given in the despun spacecraft frame, and the resulting velocities are used directly with the GSE field and moment data, with no further coordinate rotation. For this event the despun and GSE frames differ by ≈2.5–3.5°.
 
 **Phase-space volume.** FPI reports the phase-space density $f$ on a spherical instrument grid whose bins cover very different amounts of velocity space:
-- The energy channels are spaced geometrically, each about 1.28 times the previous one. In this burst interval the energy table alternates between two tables on successive sweeps, 10.96 eV–24.4 keV and 12.41 eV–27.6 keV (the same for all four spacecraft). Bin volume therefore grows roughly as $v^3$.
+- The energy channels are spaced geometrically, each about 1.28 times the previous one. In this burst interval DES is in interleaved mode, using two energy tables on alternate sweeps: 10.96 eV–24.4 keV and 12.41 eV–27.6 keV (the same for all four spacecraft). Bin volume therefore grows roughly as $v^3$.
 - The solid angle of a polar bin is about 10 times larger at the equator than next to the poles.
 
 The analysis combines measurements from different instrument bins in two steps:
@@ -88,7 +88,7 @@ The volume of each instrument bin is
 $$
 \Delta^3 v = \tfrac13\left(v_{hi}^3 - v_{lo}^3\right)\left(\cos\theta_{lo}-\cos\theta_{hi}\right)\Delta\phi,
 $$
-- $v_{lo}$ and $v_{hi}$ are midpoints between adjacent channel speeds.
+- $v_{lo}$ and $v_{hi}$ are midpoints between adjacent channel speeds. The outer edges of the lowest and highest channels are placed symmetrically about those channels' speeds.
 - θ edges divide $[0,\pi]$ into 16 equal parts, and $\Delta\phi = 2\pi/32$.
 - Volumes are computed for every time sample, because the corrected energies change with $V_{sc}$.
 
