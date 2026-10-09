@@ -372,7 +372,7 @@ def compute_vbin_vol(vbin):
     v_edges[:, 1:-1] = 0.5 * (v_centers[:, :-1] + v_centers[:, 1:]) 
     # symmetric endpoints
     v_edges[:, 0]  = v_centers[:, 0]  - (v_edges[:, 1]  - v_centers[:, 0])
-    v_edges[:, -1] = v_centers[:, -1] + (v_edges[:, -2] - v_centers[:, -1])
+    v_edges[:, -1] = v_centers[:, -1] + (v_centers[:, -1] - v_edges[:, -2])
 
     # --- Compute theta edges (fixed instrument geometry) ---
     N_THETA = 16
