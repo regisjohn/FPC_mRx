@@ -13,7 +13,9 @@ Created: 2026-03-31
 
 import matplotlib.pyplot as plt
 from pyspedas import get_data, time_datetime
+from fipcore.plotting.imagecont_fpc import _stix_math
 
+@_stix_math
 def rtplot(varlist, tind_lims=None, figsize=(12, 2.5), yzero_line=True, 
           **styles):
     """

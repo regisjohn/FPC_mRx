@@ -12,16 +12,38 @@ Created: 2026-03-26
 ===============================================================================
 """
 
+import functools
 import matplotlib.pyplot as plt
-plt.rcParams['mathtext.fontset'] = 'stix'
 from pyspedas import time_string
 from fipcore.utils.helper_utils import slice3d_to_2d, slice3d_to_2d_fac, global_vmin_vmax_fpc
 
 
+def _fs(size):
+    """Fontsize keyword, or none so that matplotlib uses rcParams."""
+    return {} if size is None else {'fontsize': size}
+
+
+def _stix_math(func):
+    """
+    Render mathtext with STIX while func runs (avoids the DejaVu glyph
+    substitution warnings for symbols like \\perp), without changing the
+    global rcParams. Skipped when func is called with use_style=True, so the
+    active matplotlib style decides.
+    """
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        if kwargs.get('use_style', False):
+            return func(*args, **kwargs)
+        with plt.rc_context({'mathtext.fontset': 'stix'}):
+            return func(*args, **kwargs)
+    return wrapper
+
+
+@_stix_math
 def imagecont_fpc(xc, yc, c_2d, ax = None, vmin=None, vmax=None, title="", xlabel='X',
-                    ylabel='Y', xlim=3, ylim=3, cmap="seismic", contour_levels=20, 
-                    title_fntsz = 16, axis_fntsz = 12, tick_fntsz = 12, 
-                    cbar_fntsz = 10, alpha_val = 1.0, dpi_val=100):
+                    ylabel='Y', xlim=3, ylim=3, cmap="seismic", contour_levels=20,
+                    title_fntsz = None, axis_fntsz = None, tick_fntsz = None,
+                    cbar_fntsz = None, alpha_val = 1.0, dpi_val=None, use_style=False):
     """
     Image and Contour Plots of FPC.
 
@@ -46,17 +68,31 @@ def imagecont_fpc(xc, yc, c_2d, ax = None, vmin=None, vmax=None, title="", xlabe
     - cbar_fntsz (int, optional): The font size of the colorbar ticks. Default is 10.
     - alpha_val (float, optional): The alpha value of the contours. Default is 1.0.
     - dpi_val (int, optional): The dots per inch of the figure, default is 100.
+    - use_style (bool, optional): If True, font sizes, dpi and the standalone
+        figure size that are not given explicitly come from the active matplotlib
+        style (e.g. plt.style.use(['science'])) instead of the defaults above.
+        Default is False.
 
     Returns:
     - im (matplotlib.image.AxesImage): The image object.
     - ax (matplotlib.axes.Axes): The axis object.
     """
+    # Hardcoded defaults unless use_style; unset values then come from rcParams
+    figsize = None
+    math_kw = {}  # STIX on labels, also when ax comes from a caller's figure
+    if not use_style:
+        title_fntsz = 16 if title_fntsz is None else title_fntsz
+        axis_fntsz = 12 if axis_fntsz is None else axis_fntsz
+        tick_fntsz = 12 if tick_fntsz is None else tick_fntsz
+        cbar_fntsz = 10 if cbar_fntsz is None else cbar_fntsz
+        dpi_val = 100 if dpi_val is None else dpi_val
+        figsize = (6, 5)
+        math_kw = {'math_fontfamily': 'stix'}
+
     # Create axis if none provided
-    if ax is None:
-        fig, ax = plt.subplots(figsize=(6,5), dpi=dpi_val)
-        standalone = True
-    else:
-        standalone = False
+    standalone = ax is None
+    if standalone:
+        fig, ax = plt.subplots(figsize=figsize, dpi=dpi_val)
 
     C = c_2d
 
@@ -70,22 +106,24 @@ def imagecont_fpc(xc, yc, c_2d, ax = None, vmin=None, vmax=None, title="", xlabe
     )
     
 
-    ax.set_xlabel(xlabel, fontsize = axis_fntsz )
-    ax.set_ylabel(ylabel, fontsize = axis_fntsz)
-    ax.set_title(title, fontsize = title_fntsz)
-    ax.tick_params(axis='both', which='major', labelsize=tick_fntsz)
+    ax.set_xlabel(xlabel, **_fs(axis_fntsz), **math_kw)
+    ax.set_ylabel(ylabel, **_fs(axis_fntsz), **math_kw)
+    ax.set_title(title, **_fs(title_fntsz), **math_kw)
+    if tick_fntsz is not None:
+        ax.tick_params(axis='both', which='major', labelsize=tick_fntsz)
     ax.set_xlim(-xlim, xlim)
     ax.set_ylim(-ylim, ylim)
 
     if standalone:
         ax.cbar = plt.colorbar(im, ax=ax)
-        ax.cbar.set_label("$C_E$", fontsize = cbar_fntsz)
+        ax.cbar.set_label("$C_E$", **_fs(cbar_fntsz), **math_kw)
         plt.tight_layout()
         plt.show()
 
     return im, ax
 
 
+@_stix_math
 def imagecont_fpc_fac(fpc_dat_2d, xc, yc, zc, time_index, time, 
                       title_prefix = "Weighted FPC (FAC)", 
                       sub_titles=(None, None, None), coord_labels=None,
@@ -159,6 +197,7 @@ def imagecont_fpc_fac(fpc_dat_2d, xc, yc, zc, time_index, time,
     return fig, axes
 
 
+@_stix_math
 def imagecont_fpc_lmn(fpc_dat_2d, xc, yc, zc, time_index, time, 
                       title_prefix = "Weighted FPC (LMN)", 
                       sub_titles=(None, None, None), coord_labels=None,

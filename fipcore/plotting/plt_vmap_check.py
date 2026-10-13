@@ -12,7 +12,9 @@ Created: 2026-03-26
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+from fipcore.plotting.imagecont_fpc import _stix_math
 
+@_stix_math
 def plt_vmap_check(vv, vmap, edges_norm, vth_mean, comp_x = 2, comp_y = 0, 
                     sweep_idx=0, xlabel='v_x', ylabel='v_y', coord_str='FAC',
                     xlim=1.5, ylim=1.5, figsize=(8, 8)):

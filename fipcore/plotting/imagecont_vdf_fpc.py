@@ -15,15 +15,15 @@ Created: 2026-03-31
 import h5py
 from pyspedas import time_string
 import matplotlib.pyplot as plt
-plt.rcParams['mathtext.fontset'] = 'stix'
 import os
 
 from fipcore.utils.helper_utils import (mms_name_make, slice3d_to_2d, 
                                     global_vmin_vmax_vdf, global_vmin_vmax_fpc)
 from fipcore.plotting.imagecont_vdf import imagecont_vdf
-from fipcore.plotting.imagecont_fpc import imagecont_fpc
+from fipcore.plotting.imagecont_fpc import imagecont_fpc, _stix_math
 
 
+@_stix_math
 def imagecont_vdf_fpc(trange, species, bin_width_frac, time_index=0, probe='1', 
                         data_rate='brst', coord_type='both', suptitle_sfx=None, 
                         dpi_val=100, axis_fntsz=16, cbar_ht=0.050, save_fig=False, 
@@ -144,6 +144,7 @@ def imagecont_vdf_fpc(trange, species, bin_width_frac, time_index=0, probe='1',
             else:
                 plt.show()
 
+@_stix_math
 def imagecont_vdf_fpc_panel(vdf_2d, cx_2d, cy_2d, cz_2d, ax_pairs, axlabels_pairs, 
                             row_labels, diag_labels, dpi_val=100, axis_fntsz=16, 
                             cbar_ht=0.047, subtract_f0=False):
@@ -235,6 +236,7 @@ def imagecont_vdf_fpc_panel(vdf_2d, cx_2d, cy_2d, cz_2d, ax_pairs, axlabels_pair
     return fig, axes
 
 
+@_stix_math
 def imagecont_vdf_fpcfold(trange, species, bin_width_frac, time_index=0, probe='1', 
                         data_rate='brst', coord_type='fac', suptitle_sfx=None, 
                         dpi_val=100, axis_fntsz=16, cbar_ht=0.050, save_fig=False, 

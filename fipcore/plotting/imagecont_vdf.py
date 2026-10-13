@@ -13,16 +13,17 @@ Created: 2026-03-26
 """
 
 import matplotlib.pyplot as plt
-plt.rcParams['mathtext.fontset'] = 'stix'
 import numpy as np
 from pyspedas import time_string
 from fipcore.utils.helper_utils import slice3d_to_2d_fac, global_vmin_vmax_vdf, slice3d_to_2d
+from fipcore.plotting.imagecont_fpc import _fs, _stix_math
 
+@_stix_math
 def imagecont_vdf(xc, yc, vdf_2d, ax = None, vmin=None, vmax=None, title="", xlabel='X',
-                    ylabel='Y', xlim=3, ylim=3, cmap=None, contour_levels=20, 
-                    title_fntsz = 16, axis_fntsz = 12, tick_fntsz = 12, 
-                    cbar_fntsz = 10, alpha_val = 1.0, dpi_val=100, 
-                    subtract_f0=False):
+                    ylabel='Y', xlim=3, ylim=3, cmap=None, contour_levels=20,
+                    title_fntsz = None, axis_fntsz = None, tick_fntsz = None,
+                    cbar_fntsz = None, alpha_val = 1.0, dpi_val=None,
+                    subtract_f0=False, use_style=False):
     """
     Image and Contour Plots of VDF.
 
@@ -48,19 +49,33 @@ def imagecont_vdf(xc, yc, vdf_2d, ax = None, vmin=None, vmax=None, title="", xla
     - cbar_fntsz (int, optional): The font size of the colorbar ticks. Default is 10.
     - alpha_val (float, optional): The alpha value of the contours. Default is 1.0.
     - dpi_val (int, optional): The dots per inch of the figure, default is 100.
-    - subtract_f0 (bool, optional): Whether the vdf is subtracted one or full one, 
+    - subtract_f0 (bool, optional): Whether the vdf is subtracted one or full one,
         default is False.
+    - use_style (bool, optional): If True, font sizes, dpi and the standalone
+        figure size that are not given explicitly come from the active matplotlib
+        style (e.g. plt.style.use(['science'])) instead of the defaults above.
+        Default is False.
 
     Returns:
     - im (matplotlib.image.AxesImage): The image object.
     - ax (matplotlib.axes.Axes): The axis object.
     """
+    # Hardcoded defaults unless use_style; unset values then come from rcParams
+    figsize = None
+    math_kw = {}  # STIX on labels, also when ax comes from a caller's figure
+    if not use_style:
+        title_fntsz = 16 if title_fntsz is None else title_fntsz
+        axis_fntsz = 12 if axis_fntsz is None else axis_fntsz
+        tick_fntsz = 12 if tick_fntsz is None else tick_fntsz
+        cbar_fntsz = 10 if cbar_fntsz is None else cbar_fntsz
+        dpi_val = 100 if dpi_val is None else dpi_val
+        figsize = (6, 5)
+        math_kw = {'math_fontfamily': 'stix'}
+
     # Create axis if none provided
-    if ax is None:
-        fig, ax = plt.subplots(figsize=(6,5), dpi=dpi_val)
-        standalone = True
-    else:
-        standalone = False
+    standalone = ax is None
+    if standalone:
+        fig, ax = plt.subplots(figsize=figsize, dpi=dpi_val)
 
     if subtract_f0:
         # Linear scale for delta vdf
@@ -91,22 +106,24 @@ def imagecont_vdf(xc, yc, vdf_2d, ax = None, vmin=None, vmax=None, title="", xla
         alpha=alpha_val,
     )
 
-    ax.set_xlabel(xlabel, fontsize = axis_fntsz )
-    ax.set_ylabel(ylabel, fontsize = axis_fntsz)
-    ax.set_title(title, fontsize = title_fntsz)
-    ax.tick_params(axis='both', which='major', labelsize=tick_fntsz)
+    ax.set_xlabel(xlabel, **_fs(axis_fntsz), **math_kw)
+    ax.set_ylabel(ylabel, **_fs(axis_fntsz), **math_kw)
+    ax.set_title(title, **_fs(title_fntsz), **math_kw)
+    if tick_fntsz is not None:
+        ax.tick_params(axis='both', which='major', labelsize=tick_fntsz)
     ax.set_xlim(-xlim, xlim)
     ax.set_ylim(-ylim, ylim)
 
     if standalone:
         ax.cbar = plt.colorbar(im, ax=ax)
-        ax.cbar.set_label("log10(f)", fontsize = cbar_fntsz)
+        ax.cbar.set_label("log10(f)", **_fs(cbar_fntsz), **math_kw)
         plt.tight_layout()
         plt.show()
 
     return im, ax
 
 
+@_stix_math
 def imagecont_vdf_fac(vdfbindat, xc, yc, zc, time_index, time, 
                       title_prefix = "Weighted VDF (FAC)", 
                       sub_titles=(None, None, None), coord_labels=None,
@@ -178,6 +195,7 @@ def imagecont_vdf_fac(vdfbindat, xc, yc, zc, time_index, time,
     return fig, axes
 
 
+@_stix_math
 def imagecont_vdf_lmn(vdfbindat, xc, yc, zc, time_index, time, 
                       title_prefix = "Raw VDF (LMN)", 
                       sub_titles=(None, None, None), coord_labels=None,
