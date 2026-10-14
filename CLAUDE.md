@@ -29,7 +29,6 @@ The code is organized as a pipeline that writes to an HDF5 file, with separate p
    - `fpc_proc`: C′ = q·v·E·f, binning, C = −(v²/2)∂C′/∂v, and J·E
 3. **Plotting** in `fipcore/plotting/`. Functions such as `imagecont_vdf_fpc(trange, species, bin_width_frac, time_index, ...)` rebuild the HDF5 filename from their arguments and read from `data/`. They never recompute anything.
    - Style flag: `imagecont_fpc` and `imagecont_vdf` take `use_style=False`. The default keeps the hardcoded font sizes, dpi and standalone figure size. With `use_style=True`, any value not passed explicitly comes from the active matplotlib style (e.g. scienceplots `['science']`), which is how the PRL figures are meant to be made. Other plotting functions don't have this flag yet. When adding it, use the same name and the same "explicit value > style > hardcoded default" rule, and pass it by keyword (`imagecont_vdf_fpc_panel` is called positionally).
-   - STIX math font: fipcore never changes global rcParams. Public plotting functions are decorated with `_stix_math` (in `imagecont_fpc.py`), which applies `mathtext.fontset='stix'` only while they run, to avoid DejaVu `\perp` substitution warnings. `imagecont_fpc`/`imagecont_vdf` also set `math_fontfamily='stix'` on their labels, because they may draw into axes from a caller's figure. Both are skipped with `use_style=True`. Decorate new public plotting functions the same way.
 
 ### Conventions that span files
 
