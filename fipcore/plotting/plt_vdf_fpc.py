@@ -14,11 +14,14 @@ Created: 2026-10-14
 ================================================================================
 """
 
+import os
 import matplotlib.pyplot as plt
 from pyspedas import time_string
+from fipcore.utils.io_utils import mms_name_make
 
 
-def plt_vdf_fpc(probes_data, time_index, prb=0, figsize=(18, 14), save_path=None):
+def plt_vdf_fpc(probes_data, time_index, prb=0, figsize=(18, 14), save_fig=False, 
+                sav_ext='png'):
     """
     4×3 subplot layout:
 
@@ -32,7 +35,8 @@ def plt_vdf_fpc(probes_data, time_index, prb=0, figsize=(18, 14), save_path=None
     - time_index (int): time index of the data, shown in the top right corner.
     - prb (int): probe whose timestamp is used in the title. Default is 0 (MMS1).
     - figsize (tuple): figure size in inches. Default is (18, 14).
-    - save_path (str or None): if given, save the figure there; otherwise show it.
+    - save_fig (bool): if True, save the figure to <project root>/plots; otherwise show it.
+    - sav_ext (str): file extension of the saved figure. Default is 'png'.
     """
     # Velocity coordinate
     vpar = probes_data[0]["vpar"]
@@ -113,15 +117,25 @@ def plt_vdf_fpc(probes_data, time_index, prb=0, figsize=(18, 14), save_path=None
         fontsize=18, fontweight='bold')
 
     # Save / show
-    if save_path is not None:
-        fig.savefig(save_path, bbox_inches='tight', dpi=300)
-        print(f'File saved to {save_path}!')
+    if save_fig:
+        # File name from the HDF5 metadata; saved to <project root>/plots
+        meta = probes_data[0]["meta"]
+        plt_pref = (f'1D_{time_index}_mms_{meta["data_rate"]}_{meta["species"]}_'
+                    f'{meta["bin_width_frac"]:.2f}')
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        plot_dir = os.path.join(project_root, "plots")
+        os.makedirs(plot_dir, exist_ok=True)
+        pltfile = os.path.join(plot_dir, mms_name_make(plt_pref, meta['trange'][0], 
+                                                      meta['trange'][1], ext=sav_ext))
+        fig.savefig(pltfile, bbox_inches='tight', dpi=300)
+        print(f'File saved to {pltfile}!')
         plt.close(fig)
     else:
         plt.show()
 
 
-def plt_vdf_fpc_peak(probes_data, time_indices, figsize=(18, 14), save_path=None):
+def plt_vdf_fpc_peak(probes_data, time_indices, figsize=(18, 14), save_fig=False, 
+                     sav_ext='png'):
     """
     4×3 subplot layout:
         Row 0: delta f
@@ -134,7 +148,8 @@ def plt_vdf_fpc_peak(probes_data, time_indices, figsize=(18, 14), save_path=None
     - probes_data (list of dict): output of load_plt_mms_data, one dict per probe.
     - time_indices (list of int): time index of each probe, shown in the legend.
     - figsize (tuple): figure size in inches. Default is (18, 14).
-    - save_path (str or None): if given, save the figure there; otherwise show it.
+    - save_fig (bool): if True, save the figure to <project root>/plots; otherwise show it.
+    - sav_ext (str): file extension of the saved figure. Default is 'png'.
     """
     # Velocity coordinate
     vpar = probes_data[0]["vpar"]
@@ -213,15 +228,25 @@ def plt_vdf_fpc_peak(probes_data, time_indices, figsize=(18, 14), save_path=None
     r"Peak $J\cdot E_{\parallel}$ Energization",fontsize=18,fontweight='bold')
 
     # Save / show
-    if save_path is not None:
-        fig.savefig(save_path, bbox_inches='tight', dpi=300)
-        print(f'File saved to {save_path}!')
+    if save_fig:
+        # File name from the HDF5 metadata; saved to <project root>/plots
+        meta = probes_data[0]["meta"]
+        plt_pref = (f'1D_peak_mms_{meta["data_rate"]}_{meta["species"]}_'
+                    f'{meta["bin_width_frac"]:.2f}')
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        plot_dir = os.path.join(project_root, "plots")
+        os.makedirs(plot_dir, exist_ok=True)
+        pltfile = os.path.join(plot_dir, mms_name_make(plt_pref, meta['trange'][0], 
+                                                      meta['trange'][1], ext=sav_ext))
+        fig.savefig(pltfile, bbox_inches='tight', dpi=300)
+        print(f'File saved to {pltfile}!')
         plt.close(fig)
     else:
         plt.show()
 
 
-def plt_vdf_cepar_vpar_peak(probes_data, figsize=None, save_path=None, use_style=False):
+def plt_vdf_cepar_vpar_peak(probes_data, figsize=None, save_fig=False, sav_ext='png', 
+                            use_style=False):
     """
     2×1 subplot layout:
 
@@ -232,7 +257,8 @@ def plt_vdf_cepar_vpar_peak(probes_data, figsize=None, save_path=None, use_style
     - probes_data (list of dict): output of load_plt_mms_data, one dict per probe.
     - figsize (tuple or None): figure size in inches. Default is None: (6, 8),
         or with use_style one column of the active style with height for two panels.
-    - save_path (str or None): if given, save the figure there; otherwise show it.
+    - save_fig (bool): if True, save the figure to <project root>/plots; otherwise show it.
+    - sav_ext (str): file extension of the saved figure. Default is 'png'.
     - use_style (bool): If True, font sizes, line widths and the figure size that
         are not given explicitly come from the active matplotlib style
         (e.g. plt.style.use(['science', 'ieee'])), the panels share the x-axis and
@@ -249,7 +275,7 @@ def plt_vdf_cepar_vpar_peak(probes_data, figsize=None, save_path=None, use_style
         if use_style:
             # One column wide from the active style; height for two stacked panels
             fig_w, fig_h = plt.rcParams['figure.figsize']
-            figsize = (fig_w, 2 * fig_h)
+            figsize = (fig_w, 1.4 * fig_h)
         else:
             figsize = (6, 8)
 
@@ -315,9 +341,19 @@ def plt_vdf_cepar_vpar_peak(probes_data, figsize=None, save_path=None, use_style
     #     r"at Peak $J\cdot E_{\parallel}$ Energization", fontsize=18, fontweight='bold')
 
     # Save / show
-    if save_path is not None:
-        fig.savefig(save_path, bbox_inches='tight', dpi=300)
-        print(f'File saved to {save_path}!')
+    if save_fig:
+        # File name from the HDF5 metadata; saved to <project root>/plots
+        meta = probes_data[0]["meta"]
+        plt_pref = (('PRL_' if use_style else '') + 
+                    f'1D_peak_par_mms_{meta["data_rate"]}_{meta["species"]}_'
+                    f'{meta["bin_width_frac"]:.2f}')
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        plot_dir = os.path.join(project_root, "plots")
+        os.makedirs(plot_dir, exist_ok=True)
+        pltfile = os.path.join(plot_dir, mms_name_make(plt_pref, meta['trange'][0], 
+                                                      meta['trange'][1], ext=sav_ext))
+        fig.savefig(pltfile, bbox_inches='tight', dpi=300)
+        print(f'File saved to {pltfile}!')
         plt.close(fig)
     else:
         plt.show()

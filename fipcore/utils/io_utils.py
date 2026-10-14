@@ -117,6 +117,11 @@ def load_plt_mms_data(hfiles, time_indices):
             vpar   = f["fac"]["binc_n"][...]        # (28,)
             dvdf   = f["fac"]["bvdf_vol"][...]      # (28,28,28,133)
             tarr   = f["meta"]["time"][...]         # (133,)
+            # Metadata used by the plot functions to name saved figures
+            meta = {"trange": list(f["meta"]["trange"].asstr()[...]),
+                    "data_rate": f["meta"]["data_rate"].asstr()[()],
+                    "species": f["meta"]["species"].asstr()[()],
+                    "bin_width_frac": float(f["meta"]["bin_width_frac"][()])}
 
         # Slice the 3 components of fpc and delta f at time_index
         c_perp1 = c_vol[0, :, :, :, time_index]
@@ -175,7 +180,9 @@ def load_plt_mms_data(hfiles, time_indices):
                 "vpar":   dvdf_vpar,
             },
 
-            "time": tarr[time_index]
+            "time": tarr[time_index],
+
+            "meta": meta
         })
 
     return probes
