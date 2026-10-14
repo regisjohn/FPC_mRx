@@ -21,6 +21,7 @@ from .plotting.imagecont_fpc import *
 from .plotting.imagecont_vdf import *
 from .plotting.imagecont_vdf_fpc import *
 from .plotting.plt_vmap_check import *
+from .plotting.plt_vdf_fpc import *
 from .plotting.rtplot import *
 
 # Utils
@@ -32,6 +33,6 @@ from .utils.io_utils import *
 __all__ = [
     "evec_proc", "fpc_proc", "fpc_mrx_main", "jvec_proc", "jdotE_proc", 
     "vdf_proc", "vel_proc", "params_proc", "imagecont_fpc", "imagecont_vdf", 
-    "imagecont_vdf_fpc", "plt_vmap_check", "rtplot", "coord_utils", 
+    "imagecont_vdf_fpc", "plt_vmap_check", "plt_vdf_fpc", "rtplot", "coord_utils", 
     "helper_utils", "io_utils"
 ]
