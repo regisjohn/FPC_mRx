@@ -54,6 +54,10 @@ UNITS_MAP = {
     "den_i": "cm^-3",
     "bulk_ve": "km/s", 
     "bulk_vi": "km/s",
+    "bulk_vi_rev": "km/s",
+    "r_gse": "km", "v_gse": "km/s",
+    "r_lmn": "km", "v_lmn": "km/s",
+    "r_recx": "km", "v_recx": "km/s",
     "te_para": "eV", "te_perp": "eV", 
     "ti_para": "eV", "ti_perp": "eV",
     "energy_e": "eV/(cm^2 s sr eV)", "energy_i": "eV/(cm^2 s sr eV)"

@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "fipcore"
 version = "1.1"
 description = "FIeld Particle COrrelation for Reconnection Events"
-dependencies = ["pyspedas", "numpy", "scipy", "matplotlib", "h5py"]
+dependencies = ["pyspedas", "numpy", "scipy", "matplotlib", "h5py", "pyvista"]
 
 [tool.setuptools]
 packages = ["fipcore"]

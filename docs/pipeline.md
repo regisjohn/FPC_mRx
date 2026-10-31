@@ -6,15 +6,16 @@
 
 ## 0. Entry points
 
-All three entry points are in [`analysis/fpc_mrx_main.py`](../fipcore/analysis/fpc_mrx_main.py). Each one processes one spacecraft over one time interval and writes to the HDF5 file described in §10:
+All entry points are in [`analysis/fpc_mrx_main.py`](../fipcore/analysis/fpc_mrx_main.py). The first three each process one spacecraft over one time interval and write to the HDF5 file described in §11:
 
 | Function | What it does |
 |---|---|
 | `fpc_mrx_main` | Runs the full chain in §1–8 and writes the results |
 | `fpc_mrx_fold` | Reads `c_vol` from that file and adds the folded FPC (§7.6) |
 | `fpc_mrx_plasma_params` | Reads E′ and the rotation matrices from that file and adds moment-based parameters (§9) |
+| `fpc_mrx_traj` | Reads the X-line index and frame velocity from the `fpc_mrx_main` files of all four spacecraft and writes their trajectories to a separate file (§10) |
 
-Run them in that order. `fpc_mrx_fold` must be rerun whenever `fpc_mrx_main` is, so the folds match the new `c_vol` (see §10).
+Run them in that order. `fpc_mrx_fold` must be rerun whenever `fpc_mrx_main` is, so the folds match the new `c_vol` (see §11). `fpc_mrx_traj` needs `fpc_mrx_main` to have been run for every spacecraft it includes.
 
 **Parameters of `fpc_mrx_main`:**
 
@@ -32,6 +33,7 @@ Run them in that order. `fpc_mrx_fold` must be rerun whenever `fpc_mrx_main` is,
 | `no_update` | `True` | Use the local pyspedas data cache and download only missing files |
 | `get_support_data` | `True` | Load support variables (energy table, angles) |
 | `lmn_mat_name`, `fac_mat_name` | `'lmn_matrix'`, `'fac_matrix'` | tplot names for the rotation matrices |
+| `lmn_trange` | `None` | MVA window for LMN (§5.3); `None` uses `trange` |
 
 **Species.** The variable names loaded by `fpc_mrx_main` are the FPI-DES (electron) ones, so the pipeline currently runs for electrons only. The lower-level functions accept `'e'` or `'ion'`.
 
@@ -39,7 +41,8 @@ Run them in that order. `fpc_mrx_fold` must be rerun whenever `fpc_mrx_main` is,
 ```python
 from fipcore import fpc_mrx_main, fpc_mrx_fold, fpc_mrx_plasma_params
 trange = ['2015-12-09/05:03:55', '2015-12-09/05:03:59']
-fpc_mrx_main(trange, probe='1', bin_width_frac=0.25, subtract_f0=False)
+lmn_trange = ['2015-12-09/05:03:56.5', '2015-12-09/05:03:57.2']
+fpc_mrx_main(trange, probe='1', bin_width_frac=0.25, subtract_f0=False, lmn_trange=lmn_trange)
 fpc_mrx_fold(trange, probe='1', bin_width_frac=0.25, subtract_f0=False)
 fpc_mrx_plasma_params(trange, probe='1', bin_width_frac=0.25, subtract_f0=False)
 ```
@@ -160,7 +163,8 @@ $$
 - **What gets rotated.** Reconnection-frame velocities, sample by sample (`vel_proc.vv_to_fac`), and $\mathbf{E}'$ (`evec_proc.evec_to_fac`, which uses [`utils/coord_utils.rotate_to_fac`](../fipcore/utils/coord_utils.py)).
 
 ### 5.3 LMN, one fixed matrix
-- **Construction.** [`utils/coord_utils.lmn_matrix_make`](../fipcore/utils/coord_utils.py) runs minimum variance analysis (`pyspedas.minvar_matrix_make`, `tslide=0`) on the 30 ms-averaged $\mathbf{B}$ over the entire `trange`, giving one matrix for the whole interval.
+- **Construction.** [`utils/coord_utils.lmn_matrix_make`](../fipcore/utils/coord_utils.py) runs minimum variance analysis (`pyspedas.minvar_matrix_make`, `tslide=0`) on the 30 ms-averaged $\mathbf{B}$ over `lmn_trange`, giving one matrix for the whole interval.
+- **MVA window.** `lmn_trange` should cover only the current sheet crossing; for this event it is 05:03:56.5–05:03:57.2, the window of Wilder et al. (2017), and the same for all four spacecraft. With `lmn_trange=None` the MVA uses the whole `trange`; over the full 4 s, L and M come out rotated by about 25–30° about N. The window is saved as `meta/lmn_trange`.
 - **Axes.** Eigenvectors are ordered by descending eigenvalue: L = maximum, M = intermediate, N = minimum variance.
 - **Sign convention.** After pyspedas's own sign handling, the code enforces:
   - $N_x>0$ (N points toward +X$_{GSE}$)
@@ -286,7 +290,51 @@ Computed on the DES time base, with ion moments interpolated to it (§2):
 - **`bg_ratio`** (guide-field ratio) is stored as metadata only.
 - **Energy spectrograms.** The omnidirectional electron and ion energy spectra are saved to a separate `.pyspd` tplot file next to the HDF5 file.
 
-## 10. Outputs
+## 10. Spacecraft trajectories (`fpc_mrx_main.fpc_mrx_traj`)
+
+Maps the four spacecraft trajectories through the structure in one common LMN frame, in each spacecraft's own reconnection frame. Unlike the other entry points it handles all spacecraft at once (`probes=['1','2','3','4']`).
+
+1. **Reconnection frame of each spacecraft.** For each probe it reads `meta/time` (the DES time base), `meta/recx_idx` (the X-line index $t_X$, §5.1) and `gse/bulk_vi_rev` (the frame velocity $\mathbf{U}_p$) from that probe's `fpc_mrx_main` file. The file is chosen by `species`, `bin_width_frac` and `subtract_f0` (default `True`, the δf files); these three values are identical in the f and δf files.
+   - **Older files.** Files written before these two datasets were saved are still accepted. $\mathbf{U}_p$ is then recovered from `gse/vv − R_pᵀ·lmn/vv`, and the index is found again with `helper_utils.bl_recx_idx`.
+2. **Mean LMN, $\bar{R}$.**
+   - **Averaged field.** FGM for all probes is loaded; MMS2–4 are put on the MMS1 time stamps with `tinterpol`, and the four fields are averaged (`bvec_gse_avg`).
+   - **MVA.** `coord_utils.lmn_matrix_make` runs MVA on that average over `lmn_trange` (the same window as in `fpc_mrx_main`, §5.3) and gives $\bar{R}$, with the sign convention of §5.3.
+3. **Ephemeris.**
+   - **Loading.** MEC survey data (`mms{p}_mec_r_gse`, `mms{p}_mec_v_gse`, 30 s cadence) are loaded over `trange` ± `mec_pad` (300 s). No burst MEC exists for this date.
+   - **Interpolation.** They are cubic-interpolated (`tinterpol`) onto each probe's own DES time stamps.
+   - **Time stamps differ.** The four DES grids are offset by a few ms, and MMS2 has 134 samples against 133 for the others, so probes are never matched by index.
+4. **Frames.** Two versions are computed:
+   - **Spacecraft frame:** $\mathbf{r}_{lmn} = \bar{R}\,\mathbf{r}_p$ and $\mathbf{v}_{lmn} = \bar{R}\,\mathbf{v}_p$.
+   - **Reconnection frame:** the shift is applied in GSE and then rotated, as in `fpc_mrx_main`:
+$$
+\mathbf{r}'_p(t) = \bar{R}\,\big[\mathbf{r}_p(t) - \mathbf{U}_p\,(t - t_{X,p})\big],\qquad
+\mathbf{v}'_p(t) = \bar{R}\,\big[\mathbf{v}_p(t) - \mathbf{U}_p\big]
+$$
+   - **Origin.** It stays at Earth's centre. At $t = t_{X,p}$ the shift is zero, so the $B_L$-reversal point is the true position.
+
+**Output.** One file for all probes: `data/mms_traj_{data_rate}_{YYYYMMDD}_{hhmmss}_{hhmmss}.h5`.
+- `meta`: `trange`, `lmn_trange`, `probes`, `species`, `bin_width_frac`, `subtract_f0`, `data_rate`, `level`, `rot_mat` ($\bar{R}$), `eigvals`.
+- `mms{p}` (one group per probe): `time`, `recx_idx`, `bulk_vi_rev`, `r_gse`, `v_gse`, `r_lmn`, `v_lmn`, `r_recx`, `v_recx` (km, km/s).
+- The filename does not include `species`, `bin_width_frac` or `subtract_f0`, so a run with other settings overwrites it. $t_X$ and $\mathbf{U}_p$ do not depend on those settings.
+
+**Plotting** ([`plotting/plt_traj_lmn.py`](../fipcore/plotting/plt_traj_lmn.py)). Both plotting functions read this file through `load_traj`.
+
+- **`plt_traj_lmn_2d`** (matplotlib) draws three panels: L–M, L–N and M–N, with L on the horizontal axis wherever it appears.
+  - **What is drawn:** every DES sample as a point, with no connecting line. ★ marks the $B_L$ reversal, ◆ marks `mark_idx` (e.g. the FPC peaks), and ○ and ■ mark the start and end.
+  - **Axes:** 1:1 aspect. Positions are plotted relative to the mean $B_L$-reversal point, rounded to 10 km; that offset is written in the axis label.
+  - **`lims`** (`{'L': (lo, hi), ...}`, in tick-label units) sets the limits of each coordinate. All samples are still plotted.
+  - **`use_style=True`** takes the figure size, fonts and dpi from the active matplotlib style (scienceplots), puts the legend above the panels and labels the panels (a)–(c).
+- **`plt_traj_lmn_3d`** (PyVista) is an interactive 3D scatter in the notebook (`trame` backend).
+  - **Markers:** a big sphere for the $B_L$ reversal and an arrow on the last part of each path for the direction.
+  - **Camera:** starts from the isometric view; `azimuth`, `elevation`, `roll`, `zoom` or a full `camera_position` change it. `lims` sets the grid box the camera is fitted to.
+  - **Saving:** a PNG screenshot or an interactive HTML file.
+
+**Extent in plasma units** (notebook `scripts/Publication_plots.ipynb`, section *MMS Trajectories in Mean LMN*).
+- **Extent.** `traj_spread` takes $\mathbf{r}'_p$ at one index per probe (the $B_L$ reversal or the FPC peak) and returns max − min along L, M and N and the pairwise distances.
+- **Units.** They are expressed in upstream $d_e$ and $d_i$ from `params_proc.compute_upstream_params`, which averages density, temperature and field over an upstream window (05:03:45–05:03:55) for one probe.
+- **Uncertainty.** It is run for all four probes; the mean $d_e$, $d_i$ is used, and the min–max across probes is quoted as the uncertainty.
+
+## 11. Outputs
 
 Results are written to `data/mms{probe}_{rate}_{f|df}_{species}_{Δ:.2f}_{YYYYMMDD}_{hhmmss}_{hhmmss}.h5` by [`utils/io_utils.h5sav`](../fipcore/utils/io_utils.py). The filename is built by `io_utils.mms_name_make`, and the `data/` directory is located relative to the package, not the working directory.
 
@@ -296,8 +344,8 @@ Results are written to `data/mms{probe}_{rate}_{f|df}_{species}_{Δ:.2f}_{YYYYMM
 
 | Group | Datasets |
 |---|---|
-| `meta` | `time`, `trange`, `probe`, `species`, `bin_width_frac`, `vth_lim`, `vthe`, `vth_mean`, `subtract_f0`, `interleave_info`, `vvol`, `vdf_raw`, `vdf_vol`, `fac2lmn`, `lmn2fac` |
-| `gse` | `vv`, `bvec`, `evec_lor` |
+| `meta` | `time`, `trange`, `probe`, `species`, `bin_width_frac`, `vth_lim`, `vthe`, `vth_mean`, `subtract_f0`, `interleave_info`, `vvol`, `vdf_raw`, `vdf_vol`, `fac2lmn`, `lmn2fac`, `recx_idx` (the X-line index, §5.1), `lmn_trange` (§5.3) |
+| `gse` | `vv`, `bvec`, `evec_lor`, `bulk_vi_rev` (the frame velocity $\mathbf{U}$, §5.1) |
 | `fac` | `rot_mat`, `vv`, `vmap`, `evec_lor`, `bvdf_vol`, `bvdf_avg`, `npts_vol`, `Cprime_vol`, `Cprime_raw`, `bCprime_vol`, `bCprime_avg`, `npts_vol_cp`, `JE_tot`, `c_vol`, `c_avg`, `binc`, `binc_n`, `edges`, `edges_n`; plus `vdf_eq` (δf runs) and `cx_folds`, `cy_folds`, `cz_folds` (after `fpc_mrx_fold`) |
 | `lmn` | as `fac` (without `vdf_eq` and the folds), plus `bvec` and `eigvals` |
 

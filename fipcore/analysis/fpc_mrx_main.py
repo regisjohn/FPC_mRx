@@ -6,6 +6,8 @@ Functions:
 - fpc_mrx_main: Master function to perform MMS FPC Analysis.
 - fpc_mrx_fold: Function to compute the folded FPC and save to the same h5 file.
 - fpc_mrx_plasma_params: Master function to compute ancillary plasma parameters 
+- fpc_mrx_traj: Master function to compute the MMS1-4 trajectories (position and 
+    velocity) in the mean LMN frame and in each probe's reconnection frame.
 
 Author: Regis John
 Created: 2026-03-31
@@ -18,6 +20,7 @@ import os
 from scipy.constants import elementary_charge as q_e
 from pyspedas.projects import mms
 from pyspedas import get_data, tplot_rename, tvector_rotate, fac_matrix_make, tplot_save, del_data
+from pyspedas import store_data, tinterpol, time_double
 import h5py
 
 import fipcore.analysis.vel_proc as vel
@@ -33,7 +36,7 @@ import fipcore.analysis.jdotE_proc as je
 def fpc_mrx_main(trange, species='e', vth_lim=3.5, bin_width_frac=0.25, mean_phi=False, 
         probe='1', data_rate='brst', level='l2', get_support_data=True, no_update=True, 
         lmn_mat_name='lmn_matrix', fac_mat_name='fac_matrix', subtract_f0=False, 
-        v_flow=None, **kwargs):
+        v_flow=None, lmn_trange=None, **kwargs):
     """
     Master function to perform MMS FPC Analysis by calling the necessary functions.
 
@@ -58,6 +61,9 @@ def fpc_mrx_main(trange, species='e', vth_lim=3.5, bin_width_frac=0.25, mean_phi
         Default is False.
     - v_flow (ndarray or list): Mean flow velocity in m/s to use for equilibrium VDF. 
         Default is None. 
+    - lmn_trange (list of str or None): [start time, end time] of the MVA window for
+        the LMN matrix, e.g. the current sheet crossing only. Data loading and the
+        X-line search still use trange. Default is None (MVA over trange).
     - **kwargs: Additional keyword arguments to pass to the other functions.
 
     Returns:
@@ -124,7 +130,8 @@ def fpc_mrx_main(trange, species='e', vth_lim=3.5, bin_width_frac=0.25, mean_phi
     vv = vel.vbin_to_vv(vbin, 'phi', mean_phi=mean_phi)
     
     # --- Shift into Reconnection Frame ---
-    coord.lmn_matrix_make('bvec_gse_dwn', trange, newname=lmn_mat_name,
+    lmn_trange = trange if lmn_trange is None else lmn_trange
+    coord.lmn_matrix_make('bvec_gse_dwn', lmn_trange, newname=lmn_mat_name,
                           evname='lmn_eigvals') # Creating LMN matrix and MVA eigenvalues
     tvector_rotate(mat_var_in=lmn_mat_name,vec_var_in='bvec_gse_dwn',
                         newname='bvec_lmn') # Rotating B vector into LMN frame
@@ -257,11 +264,14 @@ def fpc_mrx_main(trange, species='e', vth_lim=3.5, bin_width_frac=0.25, mean_phi
             "level":            level,
             "vdf_raw":          vdf_raw,
             "vdf_vol":          vdf_vol,
+            "recx_idx":         idx,
+            "lmn_trange":       lmn_trange,
         },
         "gse": {
             "vv":            vv,
             "bvec":          bvec_gse,
             "evec_lor":      evec_lor_gse,
+            "bulk_vi_rev":   bulk_vi_rev,
         },
         "fac": {
             "rot_mat":      fac_matrix,
@@ -427,6 +437,11 @@ def fpc_mrx_plasma_params(trange, probe='1', data_rate='brst', level='l2', speci
     """
     Master function to compute ancillary plasma parameters (density, temperature, bulk flow,
     current density, and J·E) using data from FPI and FGM instruments.
+
+    Gives time series over the event trange on the DES time base, written to that
+    probe's fpc_mrx_main .h5 file (run fpc_mrx_main first). For single averaged
+    upstream values (d_e, d_i, v_A, ...) with no file written, use
+    params_proc.compute_upstream_params instead.
 
     Parameters:
     - trange (list of str): [start time, end time] in the format:
@@ -601,3 +616,154 @@ def fpc_mrx_plasma_params(trange, probe='1', data_rate='brst', level='l2', speci
     print(f'Energy spectra data saved to file: {tplot_file}')
     
     return hfile, tplot_file
+
+
+def fpc_mrx_traj(trange, probes=['1', '2', '3', '4'], species='e', bin_width_frac=0.25, 
+        subtract_f0=True, data_rate='brst', level='l2', no_update=True, mec_pad=300, 
+        lmn_mat_name='lmn_matrix_avg', lmn_trange=None):
+    """
+    Master function to compute the trajectories of the MMS probes in the mean LMN 
+    frame, both in the spacecraft frame and in each probe's reconnection frame.
+
+    The mean LMN matrix R comes from a single MVA on the four-probe averaged B 
+    (FGM, probes interpolated onto the first probe's time stamps) over lmn_trange. Positions r_p 
+    and velocities v_p come from MEC (srvy, 30 s), cubic-interpolated onto each 
+    probe's DES time base from its fpc_mrx_main output file. For probe p with 
+    bulk ion velocity bulk_vi_rev_p at its B_L reversal time t_X,p:
+
+        r_recx_p(t) = R . [ r_p(t) - bulk_vi_rev_p * (t - t_X,p) ]
+        v_recx_p(t) = R . [ v_p(t) - bulk_vi_rev_p ]
+
+    The shift is done in GSE and then rotated, as in fpc_mrx_main. The origin 
+    stays at Earth's center.
+
+    Parameters:
+    - trange (list of str): [start time, end time] in the format:
+        ['YYYY-MM-DD/hh:mm:ss','YYYY-MM-DD/hh:mm:ss']
+    - probes (list of str): Probes to include. Default is ['1', '2', '3', '4'].
+    - species, bin_width_frac, subtract_f0 (str, float, bool): Identify the 
+        fpc_mrx_main output files that hold bulk_vi_rev, recx_idx and the DES 
+        time base. Defaults are 'e', 0.25 and True (the df files); these values
+        are the same in the f and df files.
+    - data_rate (str): Data rate of the FGM data. Default is 'brst'.
+    - level (str): Level of the data. Default is 'l2'.
+    - no_update (bool): If True, FGM data are read from the local cache. 
+        Default is True.
+    - mec_pad (float): Seconds of MEC data loaded on each side of trange, so 
+        the interpolation has ephemeris points on both sides. Default is 300.
+    - lmn_mat_name (str): Name of the mean LMN matrix tplot variable. 
+        Default is 'lmn_matrix_avg'.
+    - lmn_trange (list of str or None): [start time, end time] of the MVA window for
+        the mean LMN matrix; use the same window as in fpc_mrx_main. Default is None 
+        (MVA over trange).
+
+    Returns:
+    - hfile (str): Full path of the .h5 file containing the trajectories.
+    """
+    # --- Clearing tplot variable namespace ---
+    del_data('*')
+
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    data_dir = os.path.join(project_root, "data")
+    type_tag = 'df' if subtract_f0 else 'f'
+
+    # --- Reconnection frame of each probe from its fpc_mrx_main output ---
+    recx = {}
+    for p in probes:
+        hfile_pref = f'mms{p}_{data_rate}_{type_tag}_{species}_{bin_width_frac:.2f}'
+        hfile_p = os.path.join(data_dir, iout.mms_name_make(hfile_pref, trange[0], trange[1]))
+        if not os.path.exists(hfile_p):
+            raise FileNotFoundError(f'{hfile_p} not found. Run fpc_mrx_main for probe {p} first.')
+
+        with h5py.File(hfile_p, 'r') as f:
+            time_p = f['meta']['time'][...]
+            if 'bulk_vi_rev' in f['gse']:
+                bulk_vi_rev = f['gse']['bulk_vi_rev'][...]
+                idx = int(f['meta']['recx_idx'][()])
+            else:
+                # Files written before bulk_vi_rev and recx_idx were saved.
+                # lmn/vv = R_p . (gse/vv - bulk_vi_rev), so bulk_vi_rev is recovered exactly
+                R_p = f['lmn']['rot_mat'][0]
+                bulk_vi_rev = f['gse']['vv'][:, 0, 0] - R_p.T @ f['lmn']['vv'][:, 0, 0]
+                idx = hutil.bl_recx_idx(f['lmn']['bvec'][...], time_p)
+
+        recx[p] = {'time': time_p, 'bulk_vi_rev': bulk_vi_rev, 'recx_idx': idx}
+        print(f'MMS{p}: recx_idx = {idx}, bulk_vi_rev = {bulk_vi_rev} km/s')
+
+    # --- Mean LMN matrix from MVA on the four-probe averaged B ---
+    mms.fgm(trange=trange, probe=probes, data_rate=data_rate, level=level, 
+            time_clip=True, no_update=no_update)
+    b_names = [f'mms{p}_fgm_b_gse_{data_rate}_{level}_bvec' for p in probes]
+    tinterpol(b_names[1:], b_names[0], suffix='_itp') # Common time stamps
+    t_b, b_ref = get_data(b_names[0])
+    b_avg = np.mean([b_ref] + [get_data(n + '_itp')[1] for n in b_names[1:]], axis=0)
+    store_data('bvec_gse_avg', data={'x': t_b, 'y': b_avg})
+
+    lmn_trange = trange if lmn_trange is None else lmn_trange
+    coord.lmn_matrix_make('bvec_gse_avg', lmn_trange, newname=lmn_mat_name, 
+                          evname='lmn_eigvals')
+    _, lmn_matrix = get_data(lmn_mat_name)
+    _, lmn_eigvals = get_data('lmn_eigvals')
+    R = lmn_matrix[0] # rows: L, M, N in GSE
+
+    # --- MEC ephemeris (srvy only) ---
+    mec_trange = [time_double(trange[0]) - mec_pad, time_double(trange[1]) + mec_pad]
+    mms.mec(trange=mec_trange, probe=probes, data_rate='srvy', level=level)
+
+    dat_grps = {
+        "meta": {
+            "trange":           trange,
+            "probes":           probes,
+            "species":          species,
+            "bin_width_frac":   bin_width_frac,
+            "subtract_f0":      subtract_f0,
+            "data_rate":        data_rate,
+            "level":            level,
+            "lmn_trange":       lmn_trange,
+            "rot_mat":          lmn_matrix,
+            "eigvals":          lmn_eigvals[0],
+        }
+    }
+
+    for p in probes:
+        time_p = recx[p]['time']
+        bulk_vi_rev = recx[p]['bulk_vi_rev']
+        idx = recx[p]['recx_idx']
+
+        # Interpolate position and velocity onto this probe's DES time base
+        store_data(f't_des_mms{p}', data={'x': time_p, 'y': np.zeros(len(time_p))})
+        tinterpol([f'mms{p}_mec_r_gse', f'mms{p}_mec_v_gse'], f't_des_mms{p}', 
+                  method='cubic', suffix='_des')
+        _, r_gse = get_data(f'mms{p}_mec_r_gse_des')   # km
+        _, v_gse = get_data(f'mms{p}_mec_v_gse_des')   # km/s
+
+        # Spacecraft frame, rotated to mean LMN
+        r_lmn = np.einsum('ij,tj->ti', R, r_gse)
+        v_lmn = np.einsum('ij,tj->ti', R, v_gse)
+
+        # Reconnection frame: shift in GSE, then rotate to mean LMN
+        dt = time_p - time_p[idx]
+        r_recx = np.einsum('ij,tj->ti', R, r_gse - np.outer(dt, bulk_vi_rev))
+        v_recx = np.einsum('ij,tj->ti', R, v_gse - bulk_vi_rev)
+
+        dat_grps[f"mms{p}"] = {
+            "time":         time_p,
+            "recx_idx":     idx,
+            "bulk_vi_rev":  bulk_vi_rev,
+            "r_gse":        r_gse,
+            "v_gse":        v_gse,
+            "r_lmn":        r_lmn,
+            "v_lmn":        v_lmn,
+            "r_recx":       r_recx,
+            "v_recx":       v_recx,
+        }
+
+    # --- Saving to a .h5 file ---
+    os.makedirs(data_dir, exist_ok=True)
+    hfile = os.path.join(data_dir, iout.mms_name_make(f'mms_traj_{data_rate}', 
+                                                      trange[0], trange[1]))
+    iout.h5sav(hfile, dat_grps)
+
+    print(f"Data saved to file: {hfile}")
+
+    return hfile

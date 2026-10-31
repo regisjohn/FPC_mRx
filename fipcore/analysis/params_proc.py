@@ -4,6 +4,7 @@ Functions to compute plasma parameters from MMS data.
 
 Functions:
 - compute_beta_profiles: Compute the plasma beta profiles.
+- compute_upstream_params: Average plasma parameters over an upstream window.
 
 Author: Regis John
 Created: 2026-06-23
@@ -14,7 +15,8 @@ import os
 import h5py
 import numpy as np
 from pyspedas.projects import mms
-from pyspedas import tplot_rename, get_data, fac_matrix_make
+from pyspedas import tplot_rename, get_data, del_data, fac_matrix_make
+import scipy.constants as const
 from fipcore.utils.helper_utils import downsample_cad, compute_beta_par, \
     compute_beta_perp, compute_beta_scalar
 import fipcore.utils.helper_utils as hutil
@@ -198,3 +200,190 @@ def compute_jdotE_all(trange, species='e', probe='1', data_rate='brst',
     jdotE_lmn = np.column_stack([jdotE_lmn, jdotE_lmn0, jdotE_lmn1, jdotE_lmn2])
 
     return jdotE_gse, jdotE_fac, jdotE_lmn
+
+
+def compute_upstream_params(trange_upstream, probe='1', data_rate='brst', 
+    level='l2', species='e', bin_width_frac=0.25, get_support_data=True, 
+    no_update=True):
+    """
+    Average plasma parameters over an upstream window and print them.
+
+    Gives single values averaged over the window (e.g. the d_e, d_i used to
+    normalize lengths). Nothing is written to a file. For time series over the
+    event written to the .h5 file, use fpc_mrx_main.fpc_mrx_plasma_params instead.
+
+    Parameters:
+    - trange_upstream (list of str): [start time, end time] of the upstream window 
+        in the format ['YYYY-MM-DD/hh:mm:ss','YYYY-MM-DD/hh:mm:ss'].
+    - probe (str): Probe number. Default is '1'.
+    - data_rate (str): Data rate of the data. Default is 'brst'.
+    - level (str): Level of the data. Default is 'l2'.
+    - species (str): Not used. Default is 'e'.
+    - bin_width_frac (float): Not used. Default is 0.25.
+    - get_support_data (bool): If True, load in support data. Default is True.
+    - no_update (bool): If True, the data will not be updated from the server. 
+        Default is True.
+
+    Returns:
+    - params (dict): Window averages and derived parameters: b_vec, bmag (nT); 
+        den_e, den_i (cm^-3); te, ti (eV); ti_te_ratio, beta_e, beta_i, bg_ratio; 
+        ue_gse, ui_gse, vA, vti, vte, c_s (km/s); rho_i, rho_e, d_i, d_e, rho_s (km); 
+        lambda_D (m); t_ci, t_ce, t_pi, t_pe (s).
+    """
+    # Physical constants (bound here so they are not exported by `import *`)
+    m_p, m_e, e, mu_0, epsilon_0, c = (const.m_p, const.m_e, const.e, const.mu_0,
+                                       const.epsilon_0, const.c)
+
+    # Clean workspace
+    del_data('*')
+
+    # 1. Load FPI and FGM data for the upstream window
+    fpi_varlist = [
+    f'mms{probe}_des_numberdensity_brst', f'mms{probe}_dis_numberdensity_brst', 
+    f'mms{probe}_des_temppara_brst', f'mms{probe}_dis_temppara_brst', 
+    f'mms{probe}_des_tempperp_brst', f'mms{probe}_dis_tempperp_brst', 
+    f'mms{probe}_des_bulkv_gse_brst', f'mms{probe}_dis_bulkv_gse_brst'
+    ]
+    
+    mms.fpi(trange=trange_upstream, probe=probe, data_rate=data_rate, level=level, 
+        datatype=['des-moms', 'dis-moms'], time_clip=True, 
+        varnames=fpi_varlist, get_support_data=get_support_data, no_update=no_update)
+
+    mms.fgm(trange=trange_upstream, probe=probe, data_rate=data_rate, level=level,
+        varnames=f'mms{probe}_fgm_b_gse_brst_l2', time_clip=True, 
+        get_support_data=get_support_data, no_update=no_update)
+
+    # Extract the numpy arrays
+    _, b_vec = get_data(f'mms{probe}_fgm_b_gse_brst_l2_bvec')
+    _, bmag = get_data(f'mms{probe}_fgm_b_gse_brst_l2_btot')
+    _, den_e = get_data(f'mms{probe}_des_numberdensity_brst')
+    _, den_i = get_data(f'mms{probe}_dis_numberdensity_brst')
+    _, te_para = get_data(f'mms{probe}_des_temppara_brst')
+    _, ti_para = get_data(f'mms{probe}_dis_temppara_brst')
+    _, te_perp = get_data(f'mms{probe}_des_tempperp_brst')
+    _, ti_perp = get_data(f'mms{probe}_dis_tempperp_brst')
+    _, ue_gse = get_data(f'mms{probe}_des_bulkv_gse_brst')
+    _, ui_gse = get_data(f'mms{probe}_dis_bulkv_gse_brst')
+
+    # Guide Field Ratio
+    bg_ratio = 0.5
+
+    # Computing averages
+    b_vec_mean = np.nanmean(b_vec, axis=0)   # shape: (3,) in nT
+    bmag_mean = np.nanmean(bmag)             # nT
+
+    den_e_mean = np.nanmean(den_e)           # cm^-3
+    den_i_mean = np.nanmean(den_i)           # cm^-3
+
+    te_para_mean = np.nanmean(te_para)       # eV
+    te_perp_mean = np.nanmean(te_perp)       # eV
+    te_mean = (te_para_mean + 2.0 * te_perp_mean) / 3.0
+
+    ti_para_mean = np.nanmean(ti_para)       # eV
+    ti_perp_mean = np.nanmean(ti_perp)       # eV
+    ti_mean = (ti_para_mean + 2.0 * ti_perp_mean) / 3.0
+
+    ue_gse_mean = np.nanmean(ue_gse, axis=0) # shape: (3,) in km/s
+    ui_gse_mean = np.nanmean(ui_gse, axis=0) # shape: (3,) in km/s
+
+    # Convert mean values to SI units
+    B0_T = bmag_mean * 1e-9                  # T
+    n_e_m3 = den_e_mean * 1e6                # m^-3
+    n_i_m3 = den_i_mean * 1e6                # m^-3
+    Te_J = te_mean * e                       # J
+    Ti_J = ti_mean * e                       # J
+
+    # 1. Temperature Ratio & Plasma Betas
+    ti_te_ratio = ti_mean / te_mean
+    beta_e = (2.0 * mu_0 * n_e_m3 * Te_J) / (B0_T**2)
+    beta_i = (2.0 * mu_0 * n_i_m3 * Ti_J) / (B0_T**2)
+
+    # 2. Speeds in km/s
+    vA = (B0_T / np.sqrt(mu_0 * n_i_m3 * m_p)) / 1e3    # km/s
+    vti = (np.sqrt(2.0 * Ti_J / m_p)) / 1e3             # km/s
+    vte = (np.sqrt(2.0 * Te_J / m_e)) / 1e3             # km/s
+    # Ion sound speed (using electron temperature and proton mass)
+    c_s = (np.sqrt(Te_J / m_p)) / 1e3                   # km/s
+
+    # 3. Angular frequencies (rad/s)
+    omega_ci = (e * B0_T) / m_p
+    omega_ce = (e * B0_T) / m_e
+    omega_pi = np.sqrt((n_i_m3 * e**2) / (m_p * epsilon_0))
+    omega_pe = np.sqrt((n_e_m3 * e**2) / (m_e * epsilon_0))
+    # Frequencies in Hz
+    f_ci = omega_ci / (2.0 * np.pi)          # Hz
+    f_ce = omega_ce / (2.0 * np.pi)          # Hz
+    f_pi = omega_pi / (2.0 * np.pi)          # Hz
+    f_pe = omega_pe / (2.0 * np.pi)          # Hz
+
+    # Characteristic Timescales / Periods (seconds)
+    t_ci = 1.0 / f_ci  # Ion cyclotron period (s)
+    t_ce = 1.0 / f_ce  # Electron cyclotron period (s)
+    t_pi = 1.0 / f_pi  # Ion plasma timescale (s)
+    t_pe = 1.0 / f_pe  # Electron plasma timescale (s)
+
+
+    # 4. Length Scales (km)
+    rho_i = (vti * 1e3 / omega_ci) / 1e3     # km
+    rho_e = (vte * 1e3 / omega_ce) / 1e3     # km
+    d_i = (c / omega_pi) / 1e3               # km
+    d_e = (c / omega_pe) / 1e3               # km
+    # Ion sound gyroradius
+    rho_s = (c_s * 1e3 / omega_ci) / 1e3     # km
+
+    lambda_D = np.sqrt((epsilon_0 * Te_J) / (n_e_m3 * e**2)) # m
+
+    # --- Print Results ---
+    print("\n" + "="*70)
+    print("UPSTREAM PLASMA PARAMETERS")
+    print("="*70)
+
+    print("\n--- Raw Plasma Parameters ---")
+    print(f"Average B_vec (nT): {b_vec_mean}")
+    print(f"Average |B| (nT): {bmag_mean:.3f}")
+    print(f"Average Electron Density (cm^-3): {den_e_mean:.3f}")
+    print(f"Average Ion Density (cm^-3): {den_i_mean:.3f}")
+    print(f"Average Te (para, perp, scalar) (eV): {te_para_mean:.3f}, {te_perp_mean:.3f}, {te_mean:.3f}")
+    print(f"Average Ti (para, perp, scalar) (eV): {ti_para_mean:.3f}, {ti_perp_mean:.3f}, {ti_mean:.3f}")
+    
+    print("\n--- Derived Plasma Parameters ---")
+    print(f"Beta Electron (beta_e): {beta_e:.4f}")
+    print(f"Beta Ion (beta_i): {beta_i:.4f}")
+    print(f"Ti / Te Ratio: {ti_te_ratio:.3f}")
+    print(f"b_g = {bg_ratio:.3f}")
+
+    print("\n--- Characteristic Velocities ---")
+    print(f"Average Ue_gse (km/s): {ue_gse_mean}")
+    print(f"Average Ui_gse (km/s): {ui_gse_mean}")
+    print(f"Alfvén Speed (vA): {vA:.2f} km/s")
+    print(f"Ion Thermal Speed (vti): {vti:.2f} km/s")
+    print(f"Electron Thermal Speed (vte): {vte:.2f} km/s")
+    print(f"Ion Sound Speed (c_s): {c_s:.2f} km/s")
+
+    print("\n--- Characteristic Lengths ---")
+    print(f"Ion Larmor Radius (rho_i): {rho_i:.2f} km")
+    print(f"Electron Larmor Radius (rho_e): {rho_e:.2f} km")
+    print(f"Ion Skin Depth (d_i): {d_i:.2f} km")
+    print(f"Electron Skin Depth (d_e): {d_e:.2f} km")
+    print(f"Ion Sound Gyroradius (rho_s): {rho_s:.2f} km")
+    print(f"Debye Length (lambda_D): {lambda_D:.2f} m")
+
+    print("\n--- Characteristic Frequencies ---")
+    print(f"Ion Cyclotron Period (t_ci): {t_ci:.4f} s")
+    print(f"Electron Cyclotron Period (t_ce): {t_ce * 1e3:.4f} ms")
+    print(f"Ion Plasma Period (t_pi): {t_pi * 1e3:.4f} ms")
+    print(f"Electron Plasma Period (t_pe): {t_pe * 1e6:.4f} \\mu s")
+
+    print("="*70)
+
+    return {
+        "b_vec": b_vec_mean, "bmag": bmag_mean,
+        "den_e": den_e_mean, "den_i": den_i_mean,
+        "te": te_mean, "ti": ti_mean, "ti_te_ratio": ti_te_ratio,
+        "beta_e": beta_e, "beta_i": beta_i, "bg_ratio": bg_ratio,
+        "ue_gse": ue_gse_mean, "ui_gse": ui_gse_mean,
+        "vA": vA, "vti": vti, "vte": vte, "c_s": c_s,                 # km/s
+        "rho_i": rho_i, "rho_e": rho_e, "d_i": d_i, "d_e": d_e,       # km
+        "rho_s": rho_s, "lambda_D": lambda_D,                         # km (lambda_D in m)
+        "t_ci": t_ci, "t_ce": t_ce, "t_pi": t_pi, "t_pe": t_pe,       # s
+    }
