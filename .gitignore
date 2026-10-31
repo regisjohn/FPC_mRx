@@ -34,3 +34,6 @@ validation_checks/*.pdf
 *.tar
 *.tar.gz
 *.zip
+
+# Editor settings
+.vscode/
