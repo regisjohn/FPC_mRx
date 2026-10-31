@@ -330,7 +330,7 @@ $$
   - **Saving:** a PNG screenshot or an interactive HTML file.
 
 **Extent in plasma units** (notebook `scripts/Publication_plots.ipynb`, section *MMS Trajectories in Mean LMN*).
-- **Extent.** `traj_spread` takes $\mathbf{r}'_p$ at one index per probe (the $B_L$ reversal or the FPC peak) and returns max − min along L, M and N and the pairwise distances.
+- **Extent.** `traj_spread` takes $\mathbf{r}'_p$ at one index per probe (the $B_L$ reversal or the FPC peak) and returns max − min along L, M and N ($\Delta L$, $\Delta M$, $\Delta N$) and the pairwise distances.
 - **Units.** They are expressed in upstream $d_e$ and $d_i$ from `params_proc.compute_upstream_params`, which averages density, temperature and field over an upstream window (05:03:45–05:03:55) for one probe.
 - **Uncertainty.** It is run for all four probes; the mean $d_e$, $d_i$ is used, and the min–max across probes is quoted as the uncertainty.
 

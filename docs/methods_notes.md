@@ -251,7 +251,7 @@ $$
 | MMS4 | 62 | (−132.3, 52.6, 11.7) |
 
 **Size of the sampled region.** The extent is measured from the four reconnection-frame positions $\mathbf{r}'_p$ at one time per spacecraft:
-- **Extent along L, M and N:** max − min of the four positions in each coordinate.
+- **Extent along L, M and N ($\Delta L$, $\Delta M$, $\Delta N$):** max − min of the four positions in each coordinate.
 - **Pairwise distances:** the distance between each pair of spacecraft.
 
 Two choices of time are used:
@@ -265,9 +265,9 @@ Two choices of time are used:
 
 | | At $B_L$ reversal | At FPC peak |
 |---|---|---|
-| Extent along L | 13.7 km = 10.7 [10.6, 10.9] $d_e$ = 0.25 $d_i$ | 13.7 km = 10.7 [10.6, 10.9] $d_e$ = 0.25 $d_i$ |
-| Extent along M | 12.0 km = 9.4 [9.3, 9.6] $d_e$ = 0.22 $d_i$ | 10.7 km = 8.3 [8.2, 8.5] $d_e$ = 0.19 $d_i$ |
-| Extent along N | 11.5 km = 9.0 [8.8, 9.1] $d_e$ = 0.21 $d_i$ | 11.5 km = 9.0 [8.8, 9.1] $d_e$ = 0.21 $d_i$ |
+| $\Delta L$ | 13.7 km = 10.7 [10.6, 10.9] $d_e$ = 0.25 $d_i$ | 13.7 km = 10.7 [10.6, 10.9] $d_e$ = 0.25 $d_i$ |
+| $\Delta M$ | 12.0 km = 9.4 [9.3, 9.6] $d_e$ = 0.22 $d_i$ | 10.7 km = 8.3 [8.2, 8.5] $d_e$ = 0.19 $d_i$ |
+| $\Delta N$ | 11.5 km = 9.0 [8.8, 9.1] $d_e$ = 0.21 $d_i$ | 11.5 km = 9.0 [8.8, 9.1] $d_e$ = 0.21 $d_i$ |
 | Pairwise distances | 10.8–16.0 km = 8.4–12.5 $d_e$ | 8.2–16.0 km = 6.4–12.5 $d_e$ |
 
 ## 12. Software and data
